@@ -1,63 +1,4 @@
-import VideoCard from "./VideoCard";
-
-const videos = [
-  {
-    title: "Scatydeo Tanıtım Videosu - Yeni Başlayanlar İçin",
-    thumbnail: "https://images.unsplash.com/photo-1536240478700-b869070f9279?w=800&q=80",
-    duration: "12:34",
-    views: "1.2M",
-    author: "Scaty Official",
-  },
-  {
-    title: "Gece Şehir Manzaraları - 4K Sinematik",
-    thumbnail: "https://images.unsplash.com/photo-1519608487953-e999c86e7455?w=800&q=80",
-    duration: "8:45",
-    views: "856K",
-    author: "Urban Views",
-  },
-  {
-    title: "Doğa Belgeseli - Yağmur Ormanları",
-    thumbnail: "https://images.unsplash.com/photo-1518495973542-4542c06a5843?w=800&q=80",
-    duration: "24:12",
-    views: "2.1M",
-    author: "Nature Channel",
-  },
-  {
-    title: "Teknoloji Trendleri 2026 - Gelecek Burada",
-    thumbnail: "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=800&q=80",
-    duration: "18:30",
-    views: "654K",
-    author: "Tech Reviews",
-  },
-  {
-    title: "Uzay Keşfi - Mars Yolculuğu",
-    thumbnail: "https://images.unsplash.com/photo-1446776811953-b23d57bd21aa?w=800&q=80",
-    duration: "32:18",
-    views: "3.4M",
-    author: "Space Explorers",
-  },
-  {
-    title: "Müzik Prodüksiyon Dersleri - Başlangıç",
-    thumbnail: "https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?w=800&q=80",
-    duration: "15:42",
-    views: "432K",
-    author: "Beat Makers",
-  },
-  {
-    title: "Sanat ve Yaratıcılık - Digital Art",
-    thumbnail: "https://images.unsplash.com/photo-1547826039-bfc35e0f1ea8?w=800&q=80",
-    duration: "21:05",
-    views: "789K",
-    author: "Art Studio",
-  },
-  {
-    title: "Spor Highlights - En İyi Anlar",
-    thumbnail: "https://images.unsplash.com/photo-1461896836934- voices-of-sport?w=800&q=80",
-    duration: "10:28",
-    views: "1.8M",
-    author: "Sports Zone",
-  },
-];
+import { AlertTriangle, Video } from "lucide-react";
 
 const VideoGrid = () => {
   return (
@@ -67,30 +8,44 @@ const VideoGrid = () => {
 
       <div className="container mx-auto px-4 relative z-10">
         {/* Section Header */}
-        <div className="flex items-center justify-between mb-10">
-          <div>
-            <h2 className="font-display text-3xl md:text-4xl font-bold">
-              <span className="glow-text">Popüler</span> Videolar
-            </h2>
-            <p className="text-muted-foreground mt-2">En çok izlenen içerikler</p>
-          </div>
-          <a 
-            href="#" 
-            className="text-primary hover:text-accent transition-colors font-medium"
-          >
-            Tümünü Gör →
-          </a>
+        <div className="text-center mb-10">
+          <h2 className="font-display text-3xl md:text-4xl font-bold">
+            <span className="glow-text">Popüler</span> Videolar
+          </h2>
+          <p className="text-muted-foreground mt-2">En çok izlenen içerikler</p>
         </div>
 
-        {/* Video Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {videos.map((video, index) => (
-            <VideoCard 
-              key={index} 
-              {...video} 
-              delay={index * 0.1}
-            />
-          ))}
+        {/* Warning Banner */}
+        <div className="max-w-2xl mx-auto mb-12 animate-fade-in">
+          <div className="relative p-6 rounded-2xl border-2 border-primary/50 bg-primary/10 backdrop-blur-sm">
+            <div className="absolute inset-0 bg-gradient-to-r from-primary/20 via-accent/10 to-primary/20 rounded-2xl" />
+            <div className="relative flex items-center gap-4">
+              <div className="flex-shrink-0 w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center">
+                <AlertTriangle className="w-6 h-6 text-primary" />
+              </div>
+              <div>
+                <h3 className="font-display text-lg font-bold text-primary">
+                  Bu bir deneme sürümüdür
+                </h3>
+                <p className="text-muted-foreground text-sm mt-1">
+                  Scatydeo şu anda geliştirme aşamasındadır. Videolar yakında eklenecektir.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Empty State */}
+        <div className="flex flex-col items-center justify-center py-16 text-center">
+          <div className="w-24 h-24 rounded-full bg-muted/50 flex items-center justify-center mb-6">
+            <Video className="w-12 h-12 text-muted-foreground" />
+          </div>
+          <h3 className="font-display text-xl font-semibold text-muted-foreground mb-2">
+            Henüz video bulunmuyor
+          </h3>
+          <p className="text-muted-foreground/70 max-w-md">
+            İçerikler hazırlanıyor. Çok yakında harika videolarla karşınızda olacağız!
+          </p>
         </div>
       </div>
     </section>
