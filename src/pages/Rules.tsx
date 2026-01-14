@@ -1,10 +1,8 @@
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Shield, AlertTriangle, CheckCircle, XCircle, Scale } from "lucide-react";
-
 const Rules = () => {
-  return (
-    <div className="min-h-screen bg-background">
+  return <div className="min-h-screen bg-background">
       <Navbar />
 
       <main className="container mx-auto px-4 py-12">
@@ -128,9 +126,7 @@ const Rules = () => {
             <div className="text-center py-8">
               <p className="text-muted-foreground">
                 Sorularınız veya şikayetleriniz için{" "}
-                <a href="mailto:destek@scatydeo.com" className="text-primary hover:underline">
-                  destek@scatydeo.com
-                </a>{" "}
+                <a className="text-primary hover:underline" href="https://mail.google.com/mail/u/1/#inbox?compose=CllgCJZWxkrwQvqCBRrPmVhdWTMnwFdSxgrkhGQFxndcSHKrlKrZPpRKvCqwmssbNLVLGSDXdvq">a8112146@gmail.com</a>{" "}
                 adresinden bize ulaşabilirsiniz.
               </p>
               <p className="text-sm text-muted-foreground/70 mt-4">
@@ -142,8 +138,6 @@ const Rules = () => {
       </main>
 
       <Footer />
-    </div>
-  );
+    </div>;
 };
-
 export default Rules;
