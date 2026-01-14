@@ -1,8 +1,9 @@
 import { Button } from "@/components/ui/button";
-import { Play, Search, Menu, X, Bell, User, Settings, LogOut } from "lucide-react";
-import { useState } from "react";
+import { Play, Search, Menu, X, Bell, User, Settings, LogOut, Upload, Shield } from "lucide-react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -14,8 +15,21 @@ import {
 
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isModerator, setIsModerator] = useState(false);
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (user) {
+      checkModeratorStatus();
+    }
+  }, [user]);
+
+  const checkModeratorStatus = async () => {
+    if (!user) return;
+    const { data } = await supabase.rpc('has_role', { _user_id: user.id, _role: 'moderator' });
+    setIsModerator(!!data);
+  };
 
   const handleSignOut = async () => {
     await signOut();
@@ -47,6 +61,11 @@ const Navbar = () => {
 
             {user ? (
               <div className="flex items-center gap-2">
+                <Link to="/upload">
+                  <Button variant="ghost" size="icon" title="Video Yükle">
+                    <Upload className="w-5 h-5" />
+                  </Button>
+                </Link>
                 <Link to="/notifications">
                   <Button variant="ghost" size="icon"><Bell className="w-5 h-5" /></Button>
                 </Link>
@@ -66,6 +85,14 @@ const Navbar = () => {
                     <DropdownMenuItem onClick={() => navigate("/settings")}>
                       <Settings className="w-4 h-4 mr-2" />Ayarlar
                     </DropdownMenuItem>
+                    {isModerator && (
+                      <>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onClick={() => navigate("/moderator")}>
+                          <Shield className="w-4 h-4 mr-2" />Moderatör Paneli
+                        </DropdownMenuItem>
+                      </>
+                    )}
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={handleSignOut} className="text-red-400">
                       <LogOut className="w-4 h-4 mr-2" />Çıkış Yap
@@ -90,8 +117,12 @@ const Navbar = () => {
               <Link to="/rules" className="text-muted-foreground py-2">Kurallar</Link>
               {user ? (
                 <>
+                  <Link to="/upload" className="text-muted-foreground py-2">Video Yükle</Link>
                   <Link to="/notifications" className="text-muted-foreground py-2">Bildirimler</Link>
                   <Link to="/settings" className="text-muted-foreground py-2">Ayarlar</Link>
+                  {isModerator && (
+                    <Link to="/moderator" className="text-primary py-2">Moderatör Paneli</Link>
+                  )}
                   <Button variant="outline" onClick={handleSignOut}>Çıkış Yap</Button>
                 </>
               ) : (

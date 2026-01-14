@@ -17,6 +17,7 @@ import {
   AlertTriangle
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import ReportVideoDialog from "@/components/ReportVideoDialog";
 
 interface Video {
   id: string;
@@ -57,6 +58,7 @@ const Watch = () => {
   const [newComment, setNewComment] = useState("");
   const [loading, setLoading] = useState(true);
   const [liked, setLiked] = useState(false);
+  const [subscribed, setSubscribed] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -67,6 +69,12 @@ const Watch = () => {
       }
     }
   }, [id, user]);
+
+  useEffect(() => {
+    if (user && video) {
+      checkIfSubscribed();
+    }
+  }, [user, video]);
 
   const fetchVideo = async () => {
     const { data, error } = await supabase
@@ -123,6 +131,53 @@ const Watch = () => {
       .maybeSingle();
     
     setLiked(!!data);
+  };
+
+  const checkIfSubscribed = async () => {
+    if (!user || !video) return;
+    const { data } = await supabase
+      .from("subscriptions")
+      .select("id")
+      .eq("channel_id", video.user_id)
+      .eq("subscriber_id", user.id)
+      .maybeSingle();
+    
+    setSubscribed(!!data);
+  };
+
+  const handleSubscribe = async () => {
+    if (!user) {
+      toast({
+        title: "Giriş Yapın",
+        description: "Abone olmak için giriş yapmalısınız.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!video) return;
+
+    if (subscribed) {
+      await supabase
+        .from("subscriptions")
+        .delete()
+        .eq("channel_id", video.user_id)
+        .eq("subscriber_id", user.id);
+      setSubscribed(false);
+      toast({
+        title: "Abonelik İptal Edildi",
+        description: "Artık bu kanalı takip etmiyorsunuz.",
+      });
+    } else {
+      await supabase
+        .from("subscriptions")
+        .insert({ channel_id: video.user_id, subscriber_id: user.id });
+      setSubscribed(true);
+      toast({
+        title: "Abone Olundu",
+        description: "Bu kanalı takip ediyorsunuz!",
+      });
+    }
   };
 
   const handleLike = async () => {
@@ -279,6 +334,7 @@ const Watch = () => {
                   <Share2 className="w-4 h-4" />
                   Paylaş
                 </Button>
+                <ReportVideoDialog videoId={video.id} videoTitle={video.title} />
               </div>
 
               {/* Channel Info */}
@@ -300,9 +356,15 @@ const Watch = () => {
                     </p>
                   </div>
                 </Link>
-                <Button variant="hero" size="sm">
-                  Abone Ol
-                </Button>
+                {user?.id !== video.user_id && (
+                  <Button 
+                    variant={subscribed ? "outline" : "hero"} 
+                    size="sm"
+                    onClick={handleSubscribe}
+                  >
+                    {subscribed ? "Abone" : "Abone Ol"}
+                  </Button>
+                )}
               </div>
 
               {/* Description */}
