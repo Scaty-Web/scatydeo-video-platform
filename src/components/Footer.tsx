@@ -26,7 +26,7 @@ const Footer = () => {
               <li><a href="#" className="hover:text-primary transition-colors">Ana Sayfa</a></li>
               <li><a href="#videos" className="hover:text-primary transition-colors">Videolar</a></li>
               <li><a href="#about" className="hover:text-primary transition-colors">Hakkında</a></li>
-              <li><a href="#" className="hover:text-primary transition-colors">İletişim</a></li>
+              <li><a href="mailto:a8112146@gmail.com" className="hover:text-primary transition-colors">İletişim</a></li>
             </ul>
           </div>
 
