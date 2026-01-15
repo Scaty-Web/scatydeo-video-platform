@@ -126,7 +126,7 @@ const Rules = () => {
             <div className="text-center py-8">
               <p className="text-muted-foreground">
                 Sorularınız veya şikayetleriniz için{" "}
-                <a className="text-primary hover:underline" href="https://mail.google.com/mail/u/1/#inbox?compose=CllgCJZWxkrwQvqCBRrPmVhdWTMnwFdSxgrkhGQFxndcSHKrlKrZPpRKvCqwmssbNLVLGSDXdvq">a8112146@gmail.com</a>{" "}
+                <a className="text-primary hover:underline" href="mailto:a8112146@gmail.com">a8112146@gmail.com</a>{" "}
                 adresinden bize ulaşabilirsiniz.
               </p>
               <p className="text-sm text-muted-foreground/70 mt-4">
