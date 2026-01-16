@@ -359,6 +359,23 @@ export type Database = {
           reason: string
         }[]
       }
+      get_video_comments: {
+        Args: { target_video_id: string }
+        Returns: {
+          content: string
+          created_at: string | null
+          id: string
+          likes_count: number | null
+          user_id: string
+          video_id: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "comments"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
