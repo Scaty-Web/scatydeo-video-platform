@@ -1,32 +1,24 @@
 import { Sparkles, Zap, Shield, Globe, Smartphone } from "lucide-react";
 import { Button } from "@/components/ui/button";
-
-const features = [
-  {
-    icon: Zap,
-    title: "Ultra Hızlı",
-    description: "Anında yüklenen videolar ile kesintisiz izleme deneyimi"
-  },
-  {
-    icon: Shield,
-    title: "Güvenli",
-    description: "Verileriniz en üst düzey güvenlik protokolleri ile korunur"
-  },
-  {
-    icon: Globe,
-    title: "Küresel",
-    description: "Dünyanın her yerinden erişilebilir içerik ağı"
-  },
-  {
-    icon: Sparkles,
-    title: "Yenilikçi",
-    description: "En son teknolojiler ile benzersiz deneyim"
-  },
-];
-
+const features = [{
+  icon: Zap,
+  title: "Ultra Hızlı",
+  description: "Anında yüklenen videolar ile kesintisiz izleme deneyimi"
+}, {
+  icon: Shield,
+  title: "Güvenli",
+  description: "Verileriniz en üst düzey güvenlik protokolleri ile korunur"
+}, {
+  icon: Globe,
+  title: "Küresel",
+  description: "Dünyanın her yerinden erişilebilir içerik ağı"
+}, {
+  icon: Sparkles,
+  title: "Yenilikçi",
+  description: "En son teknolojiler ile benzersiz deneyim"
+}];
 const AboutSection = () => {
-  return (
-    <section id="about" className="py-20 relative">
+  return <section id="about" className="py-20 relative">
       {/* Glow Effects */}
       <div className="absolute top-1/2 left-0 w-64 h-64 bg-primary/10 rounded-full blur-[100px]" />
       <div className="absolute top-1/2 right-0 w-64 h-64 bg-accent/10 rounded-full blur-[100px]" />
@@ -47,12 +39,9 @@ const AboutSection = () => {
 
           {/* Features Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {features.map((feature, index) => (
-              <div 
-                key={index}
-                className="group p-6 rounded-2xl bg-card border border-border hover:border-primary/50 transition-all duration-300 hover:shadow-glow animate-fade-in"
-                style={{ animationDelay: `${index * 0.1}s` }}
-              >
+            {features.map((feature, index) => <div key={index} className="group p-6 rounded-2xl bg-card border border-border hover:border-primary/50 transition-all duration-300 hover:shadow-glow animate-fade-in" style={{
+            animationDelay: `${index * 0.1}s`
+          }}>
                 <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-colors">
                   <feature.icon className="w-6 h-6 text-primary" />
                 </div>
@@ -62,23 +51,15 @@ const AboutSection = () => {
                 <p className="text-muted-foreground">
                   {feature.description}
                 </p>
-              </div>
-            ))}
+              </div>)}
           </div>
 
           {/* Platform Box */}
           <div className="mt-16 p-8 rounded-2xl gradient-border">
             <div className="text-center">
-              <h3 className="font-display text-2xl font-bold mb-4">Platformlarımız</h3>
-              <p className="text-muted-foreground leading-relaxed mb-6">
-                Scatydeo'ya farklı platformlardan erişin
-              </p>
-              <Button
-                variant="glow"
-                size="lg"
-                className="gap-2"
-                onClick={() => window.open('https://scaty-web.github.io/Scatydeo-App/', '_blank')}
-              >
+              <h3 className="font-display text-2xl font-bold mb-4">Uygulamamız</h3>
+              <p className="text-muted-foreground leading-relaxed mb-6">Scatydeo'nun uygulamasını indirin</p>
+              <Button variant="glow" size="lg" className="gap-2" onClick={() => window.open('https://scaty-web.github.io/Scatydeo-App/', '_blank')}>
                 <Smartphone className="w-5 h-5" />
                 Scatydeo App
               </Button>
@@ -98,8 +79,6 @@ const AboutSection = () => {
           </div>
         </div>
       </div>
-    </section>
-  );
+    </section>;
 };
-
 export default AboutSection;
