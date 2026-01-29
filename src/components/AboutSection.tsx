@@ -1,4 +1,5 @@
-import { Sparkles, Zap, Shield, Globe } from "lucide-react";
+import { Sparkles, Zap, Shield, Globe, Smartphone } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 const features = [
   {
@@ -65,8 +66,27 @@ const AboutSection = () => {
             ))}
           </div>
 
-          {/* Mission Statement */}
+          {/* Platform Box */}
           <div className="mt-16 p-8 rounded-2xl gradient-border">
+            <div className="text-center">
+              <h3 className="font-display text-2xl font-bold mb-4">Platformlarımız</h3>
+              <p className="text-muted-foreground leading-relaxed mb-6">
+                Scatydeo'ya farklı platformlardan erişin
+              </p>
+              <Button
+                variant="glow"
+                size="lg"
+                className="gap-2"
+                onClick={() => window.open('https://scaty-web.github.io/Scatydeo-App/', '_blank')}
+              >
+                <Smartphone className="w-5 h-5" />
+                Scatydeo App
+              </Button>
+            </div>
+          </div>
+
+          {/* Mission Statement */}
+          <div className="mt-8 p-8 rounded-2xl gradient-border">
             <div className="text-center">
               <h3 className="font-display text-2xl font-bold mb-4">Misyonumuz</h3>
               <p className="text-muted-foreground leading-relaxed">
