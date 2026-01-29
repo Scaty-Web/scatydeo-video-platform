@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import VideoPlayer from "@/components/VideoPlayer";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -18,7 +19,6 @@ import {
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import ReportVideoDialog from "@/components/ReportVideoDialog";
-
 interface Video {
   id: string;
   title: string;
@@ -289,16 +289,15 @@ const Watch = () => {
           {/* Video Player */}
           <div className="lg:col-span-2 space-y-6">
             {/* Video */}
-            <div className="aspect-video bg-black rounded-xl overflow-hidden">
+            <div className="aspect-video">
               {video.video_url ? (
-                <video
+                <VideoPlayer
                   src={video.video_url}
-                  controls
-                  className="w-full h-full"
                   poster={video.thumbnail_url || undefined}
+                  className="w-full h-full"
                 />
               ) : (
-                <div className="w-full h-full flex items-center justify-center bg-muted">
+                <div className="w-full h-full flex items-center justify-center bg-muted rounded-xl">
                   <p className="text-muted-foreground">Video yüklenemedi</p>
                 </div>
               )}
