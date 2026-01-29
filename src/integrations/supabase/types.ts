@@ -376,11 +376,19 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      get_video_like_count: {
+        Args: { target_video_id: string }
+        Returns: number
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
         }
+        Returns: boolean
+      }
+      has_user_liked_video: {
+        Args: { target_video_id: string }
         Returns: boolean
       }
       is_user_banned: { Args: { _user_id: string }; Returns: boolean }
