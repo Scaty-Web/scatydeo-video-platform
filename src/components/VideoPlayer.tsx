@@ -16,10 +16,6 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-  DropdownMenuSub,
-  DropdownMenuSubTrigger,
-  DropdownMenuSubContent,
-  DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 
 interface VideoPlayerProps {
@@ -37,13 +33,6 @@ const PLAYBACK_SPEEDS = [
   { value: 2, label: "2x" },
 ];
 
-const QUALITY_OPTIONS = [
-  { value: "auto", label: "Otomatik", height: 0 },
-  { value: "1080p", label: "1080p", height: 1080 },
-  { value: "720p", label: "720p", height: 720 },
-  { value: "480p", label: "480p", height: 480 },
-  { value: "360p", label: "360p", height: 360 },
-];
 
 const VideoPlayer = ({ src, poster, className }: VideoPlayerProps) => {
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -59,8 +48,6 @@ const VideoPlayer = ({ src, poster, className }: VideoPlayerProps) => {
   const [isMuted, setIsMuted] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [playbackSpeed, setPlaybackSpeed] = useState(1);
-  const [quality, setQuality] = useState("auto");
-  const [detectedQuality, setDetectedQuality] = useState<string | null>(null);
   const [showControls, setShowControls] = useState(true);
   const [isHovering, setIsHovering] = useState(false);
   const [buffered, setBuffered] = useState(0);
@@ -93,18 +80,6 @@ const VideoPlayer = ({ src, poster, className }: VideoPlayerProps) => {
 
     const handleLoadedMetadata = () => {
       setDuration(video.duration);
-      // Detect video quality from video dimensions
-      if (video.videoHeight) {
-        if (video.videoHeight >= 1080) {
-          setDetectedQuality("1080p");
-        } else if (video.videoHeight >= 720) {
-          setDetectedQuality("720p");
-        } else if (video.videoHeight >= 480) {
-          setDetectedQuality("480p");
-        } else {
-          setDetectedQuality("360p");
-        }
-      }
     };
 
     const handleEnded = () => {
@@ -383,7 +358,7 @@ const VideoPlayer = ({ src, poster, className }: VideoPlayerProps) => {
 
           {/* Right Controls */}
           <div className="flex items-center gap-2">
-            {/* Settings Menu (Speed & Quality) */}
+            {/* Settings Menu (Speed Only) */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button
@@ -395,72 +370,21 @@ const VideoPlayer = ({ src, poster, className }: VideoPlayerProps) => {
               </DropdownMenuTrigger>
               <DropdownMenuContent
                 align="end"
-                className="bg-card/95 backdrop-blur-lg border-primary/30 min-w-[180px]"
+                className="bg-card/95 backdrop-blur-lg border-primary/30 min-w-[150px]"
               >
-                {/* Quality Submenu */}
-                <DropdownMenuSub>
-                  <DropdownMenuSubTrigger className="cursor-pointer">
-                    <span className="flex items-center justify-between w-full">
-                      <span>Kalite</span>
-                      <span className="text-muted-foreground text-xs ml-4">
-                        {quality === "auto" 
-                          ? `Otomatik${detectedQuality ? ` (${detectedQuality})` : ""}`
-                          : quality}
-                      </span>
-                    </span>
-                  </DropdownMenuSubTrigger>
-                  <DropdownMenuSubContent className="bg-card/95 backdrop-blur-lg border-primary/30">
-                    {QUALITY_OPTIONS.map((q) => (
-                      <DropdownMenuItem
-                        key={q.value}
-                        onClick={() => setQuality(q.value)}
-                        className={cn(
-                          "cursor-pointer flex items-center justify-between",
-                          quality === q.value && "bg-primary/20 text-primary"
-                        )}
-                      >
-                        <span>
-                          {q.label}
-                          {q.value === "auto" && detectedQuality && (
-                            <span className="text-muted-foreground text-xs ml-1">
-                              ({detectedQuality})
-                            </span>
-                          )}
-                        </span>
-                        {quality === q.value && <Check className="w-4 h-4 ml-2" />}
-                      </DropdownMenuItem>
-                    ))}
-                  </DropdownMenuSubContent>
-                </DropdownMenuSub>
-
-                <DropdownMenuSeparator />
-
-                {/* Speed Submenu */}
-                <DropdownMenuSub>
-                  <DropdownMenuSubTrigger className="cursor-pointer">
-                    <span className="flex items-center justify-between w-full">
-                      <span>Hız</span>
-                      <span className="text-muted-foreground text-xs ml-4">
-                        {playbackSpeed === 1 ? "Normal" : `${playbackSpeed}x`}
-                      </span>
-                    </span>
-                  </DropdownMenuSubTrigger>
-                  <DropdownMenuSubContent className="bg-card/95 backdrop-blur-lg border-primary/30">
-                    {PLAYBACK_SPEEDS.map((speed) => (
-                      <DropdownMenuItem
-                        key={speed.value}
-                        onClick={() => handleSpeedChange(speed.value)}
-                        className={cn(
-                          "cursor-pointer flex items-center justify-between",
-                          playbackSpeed === speed.value && "bg-primary/20 text-primary"
-                        )}
-                      >
-                        <span>{speed.label}</span>
-                        {playbackSpeed === speed.value && <Check className="w-4 h-4 ml-2" />}
-                      </DropdownMenuItem>
-                    ))}
-                  </DropdownMenuSubContent>
-                </DropdownMenuSub>
+                {PLAYBACK_SPEEDS.map((speed) => (
+                  <DropdownMenuItem
+                    key={speed.value}
+                    onClick={() => handleSpeedChange(speed.value)}
+                    className={cn(
+                      "cursor-pointer flex items-center justify-between",
+                      playbackSpeed === speed.value && "bg-primary/20 text-primary"
+                    )}
+                  >
+                    <span>{speed.label}</span>
+                    {playbackSpeed === speed.value && <Check className="w-4 h-4 ml-2" />}
+                  </DropdownMenuItem>
+                ))}
               </DropdownMenuContent>
             </DropdownMenu>
 
