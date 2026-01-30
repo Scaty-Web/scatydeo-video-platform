@@ -1,9 +1,12 @@
 import { AlertTriangle, Video, Loader2 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useLanguage } from "@/hooks/useLanguage";
 import VideoCard from "./VideoCard";
 
 const VideoGrid = () => {
+  const { t } = useLanguage();
+  
   const { data: videos, isLoading } = useQuery({
     queryKey: ['public-videos'],
     queryFn: async () => {
@@ -47,9 +50,9 @@ const VideoGrid = () => {
         {/* Section Header */}
         <div className="text-center mb-10">
           <h2 className="font-display text-3xl md:text-4xl font-bold">
-            <span className="glow-text">Popüler</span> Videolar
+            <span className="glow-text">{t.videoGrid.title}</span> {t.videoGrid.titleHighlight}
           </h2>
-          <p className="text-muted-foreground mt-2">En çok izlenen içerikler</p>
+          <p className="text-muted-foreground mt-2">{t.videoGrid.subtitle}</p>
         </div>
 
         {/* Loading State */}
@@ -70,7 +73,7 @@ const VideoGrid = () => {
                 thumbnail={video.thumbnail_url || '/placeholder.svg'}
                 duration={video.duration || '0:00'}
                 views={formatViews(video.views_count)}
-                author={video.profiles?.display_name || video.profiles?.username || 'Anonim'}
+                author={video.profiles?.display_name || video.profiles?.username || t.videoGrid.anonymous}
                 delay={index * 0.1}
               />
             ))}
@@ -90,10 +93,10 @@ const VideoGrid = () => {
                   </div>
                   <div>
                     <h3 className="font-display text-lg font-bold text-primary">
-                      Bu bir deneme sürümüdür
+                      {t.videoGrid.warningTitle}
                     </h3>
                     <p className="text-muted-foreground text-sm mt-1">
-                      Scatydeo şu anda geliştirme aşamasındadır. Videolar yakında eklenecektir.
+                      {t.videoGrid.warningDesc}
                     </p>
                   </div>
                 </div>
@@ -105,10 +108,10 @@ const VideoGrid = () => {
                 <Video className="w-12 h-12 text-muted-foreground" />
               </div>
               <h3 className="font-display text-xl font-semibold text-muted-foreground mb-2">
-                Henüz video bulunmuyor
+                {t.videoGrid.emptyTitle}
               </h3>
               <p className="text-muted-foreground/70 max-w-md">
-                İçerikler hazırlanıyor. Çok yakında harika videolarla karşınızda olacağız!
+                {t.videoGrid.emptyDesc}
               </p>
             </div>
           </>

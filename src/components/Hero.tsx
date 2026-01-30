@@ -1,7 +1,10 @@
 import { Button } from "@/components/ui/button";
 import { Play, Sparkles } from "lucide-react";
+import { useLanguage } from "@/hooks/useLanguage";
 
 const Hero = () => {
+  const { t } = useLanguage();
+
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-16">
       {/* Background Effects */}
@@ -24,7 +27,7 @@ const Hero = () => {
           {/* Badge */}
           <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 border border-primary/30 rounded-full mb-8 animate-fade-in">
             <Sparkles className="w-4 h-4 text-primary" />
-            <span className="text-sm text-primary font-medium">Yeni nesil video platformu</span>
+            <span className="text-sm text-primary font-medium">{t.hero.badge}</span>
           </div>
 
           {/* Main Title */}
@@ -36,18 +39,17 @@ const Hero = () => {
 
           {/* Subtitle */}
           <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-10 animate-fade-in" style={{ animationDelay: '0.2s' }}>
-            Scaty Web ORG tarafından geliştirilen yeni nesil video platformu. 
-            Sınırsız içerik, benzersiz deneyim.
+            {t.hero.subtitle}
           </p>
 
           {/* CTA Buttons */}
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 animate-fade-in" style={{ animationDelay: '0.3s' }}>
             <Button variant="hero" size="xl" className="group">
               <Play className="w-5 h-5 group-hover:scale-110 transition-transform" />
-              Keşfetmeye Başla
+              {t.hero.exploreBtn}
             </Button>
             <Button variant="outline" size="xl">
-              Daha Fazla Bilgi
+              {t.hero.moreInfoBtn}
             </Button>
           </div>
 
@@ -55,15 +57,15 @@ const Hero = () => {
           <div className="grid grid-cols-3 gap-8 mt-20 max-w-lg mx-auto animate-fade-in" style={{ animationDelay: '0.4s' }}>
             <div className="text-center">
               <div className="font-display text-3xl md:text-4xl font-bold text-primary glow-text">1M+</div>
-              <div className="text-sm text-muted-foreground mt-1">Video</div>
+              <div className="text-sm text-muted-foreground mt-1">{t.hero.statsVideos}</div>
             </div>
             <div className="text-center">
               <div className="font-display text-3xl md:text-4xl font-bold text-primary glow-text">500K+</div>
-              <div className="text-sm text-muted-foreground mt-1">Kullanıcı</div>
+              <div className="text-sm text-muted-foreground mt-1">{t.hero.statsUsers}</div>
             </div>
             <div className="text-center">
               <div className="font-display text-3xl md:text-4xl font-bold text-primary glow-text">4K</div>
-              <div className="text-sm text-muted-foreground mt-1">Kalite</div>
+              <div className="text-sm text-muted-foreground mt-1">{t.hero.statsQuality}</div>
             </div>
           </div>
         </div>

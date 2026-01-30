@@ -3,6 +3,7 @@ import { Play, Search, Menu, X, Bell, User, Settings, LogOut, Upload, Shield } f
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { useLanguage } from "@/hooks/useLanguage";
 import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -12,11 +13,13 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import LanguageSwitcher from "./LanguageSwitcher";
 
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isModerator, setIsModerator] = useState(false);
   const { user, signOut } = useAuth();
+  const { t } = useLanguage();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -48,26 +51,28 @@ const Navbar = () => {
           </Link>
 
           <div className="hidden md:flex items-center gap-8">
-            <Link to="/" className="text-muted-foreground hover:text-foreground transition-colors">Ana Sayfa</Link>
-            <a href="/#videos" className="text-muted-foreground hover:text-foreground transition-colors">Videolar</a>
-            <Link to="/rules" className="text-muted-foreground hover:text-foreground transition-colors">Kurallar</Link>
+            <Link to="/" className="text-muted-foreground hover:text-foreground transition-colors">{t.nav.home}</Link>
+            <a href="/#videos" className="text-muted-foreground hover:text-foreground transition-colors">{t.nav.videos}</a>
+            <Link to="/rules" className="text-muted-foreground hover:text-foreground transition-colors">{t.nav.rules}</Link>
           </div>
 
           <div className="hidden md:flex items-center gap-4">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <input type="text" placeholder="Video ara..." className="w-64 h-10 pl-10 pr-4 bg-muted rounded-lg border border-border focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all" />
+              <input type="text" placeholder={t.nav.searchPlaceholder} className="w-64 h-10 pl-10 pr-4 bg-muted rounded-lg border border-border focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all" />
             </div>
+
+            <LanguageSwitcher />
 
             {user ? (
               <div className="flex items-center gap-2">
                 <Link to="/upload">
-                  <Button variant="ghost" size="icon" title="Video Yükle">
+                  <Button variant="ghost" size="icon" title={t.nav.uploadVideo}>
                     <Upload className="w-5 h-5" />
                   </Button>
                 </Link>
                 <Link to="/notifications">
-                  <Button variant="ghost" size="icon"><Bell className="w-5 h-5" /></Button>
+                  <Button variant="ghost" size="icon" title={t.nav.notifications}><Bell className="w-5 h-5" /></Button>
                 </Link>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
@@ -80,28 +85,28 @@ const Navbar = () => {
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-48">
                     <DropdownMenuItem onClick={() => navigate("/settings")}>
-                      <User className="w-4 h-4 mr-2" />Profilim
+                      <User className="w-4 h-4 mr-2" />{t.nav.myProfile}
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => navigate("/settings")}>
-                      <Settings className="w-4 h-4 mr-2" />Ayarlar
+                      <Settings className="w-4 h-4 mr-2" />{t.nav.settings}
                     </DropdownMenuItem>
                     {isModerator && (
                       <>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem onClick={() => navigate("/moderator")}>
-                          <Shield className="w-4 h-4 mr-2" />Moderatör Paneli
+                          <Shield className="w-4 h-4 mr-2" />{t.nav.moderatorPanel}
                         </DropdownMenuItem>
                       </>
                     )}
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={handleSignOut} className="text-red-400">
-                      <LogOut className="w-4 h-4 mr-2" />Çıkış Yap
+                      <LogOut className="w-4 h-4 mr-2" />{t.nav.logout}
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
               </div>
             ) : (
-              <Link to="/auth"><Button variant="hero" size="sm">Giriş Yap</Button></Link>
+              <Link to="/auth"><Button variant="hero" size="sm">{t.nav.login}</Button></Link>
             )}
           </div>
 
@@ -113,20 +118,23 @@ const Navbar = () => {
         {isMenuOpen && (
           <div className="md:hidden py-4 border-t border-border animate-fade-in">
             <div className="flex flex-col gap-4">
-              <Link to="/" className="text-foreground py-2">Ana Sayfa</Link>
-              <Link to="/rules" className="text-muted-foreground py-2">Kurallar</Link>
+              <Link to="/" className="text-foreground py-2">{t.nav.home}</Link>
+              <Link to="/rules" className="text-muted-foreground py-2">{t.nav.rules}</Link>
+              <div className="py-2">
+                <LanguageSwitcher />
+              </div>
               {user ? (
                 <>
-                  <Link to="/upload" className="text-muted-foreground py-2">Video Yükle</Link>
-                  <Link to="/notifications" className="text-muted-foreground py-2">Bildirimler</Link>
-                  <Link to="/settings" className="text-muted-foreground py-2">Ayarlar</Link>
+                  <Link to="/upload" className="text-muted-foreground py-2">{t.nav.uploadVideo}</Link>
+                  <Link to="/notifications" className="text-muted-foreground py-2">{t.nav.notifications}</Link>
+                  <Link to="/settings" className="text-muted-foreground py-2">{t.nav.settings}</Link>
                   {isModerator && (
-                    <Link to="/moderator" className="text-primary py-2">Moderatör Paneli</Link>
+                    <Link to="/moderator" className="text-primary py-2">{t.nav.moderatorPanel}</Link>
                   )}
-                  <Button variant="outline" onClick={handleSignOut}>Çıkış Yap</Button>
+                  <Button variant="outline" onClick={handleSignOut}>{t.nav.logout}</Button>
                 </>
               ) : (
-                <Link to="/auth"><Button variant="hero" className="w-full">Giriş Yap</Button></Link>
+                <Link to="/auth"><Button variant="hero" className="w-full">{t.nav.login}</Button></Link>
               )}
             </div>
           </div>
