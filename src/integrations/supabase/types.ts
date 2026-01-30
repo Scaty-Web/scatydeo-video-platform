@@ -352,6 +352,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      can_view_video_comments: {
+        Args: { target_video_id: string }
+        Returns: boolean
+      }
       get_ban_info: {
         Args: { _user_id: string }
         Returns: {
