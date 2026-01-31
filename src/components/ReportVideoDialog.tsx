@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useLanguage } from "@/hooks/useLanguage";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Flag } from "lucide-react";
@@ -27,30 +28,31 @@ interface ReportVideoDialogProps {
   videoTitle: string;
 }
 
-const REPORT_REASONS = [
-  { value: "spam", label: "Spam veya yanıltıcı içerik" },
-  { value: "violence", label: "Şiddet veya tehlikeli içerik" },
-  { value: "hate", label: "Nefret söylemi veya taciz" },
-  { value: "sexual", label: "Cinsel içerik" },
-  { value: "harmful", label: "Zararlı veya tehlikeli eylemler" },
-  { value: "child", label: "Çocuk istismarı" },
-  { value: "copyright", label: "Telif hakkı ihlali" },
-  { value: "other", label: "Diğer" },
-];
-
 const ReportVideoDialog = ({ videoId, videoTitle }: ReportVideoDialogProps) => {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
   const [reason, setReason] = useState("");
   const [details, setDetails] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
+  const REPORT_REASONS = [
+    { value: "spam", label: t.report.reasons.spam },
+    { value: "violence", label: t.report.reasons.violence },
+    { value: "hate", label: t.report.reasons.hate },
+    { value: "sexual", label: t.report.reasons.sexual },
+    { value: "harmful", label: t.report.reasons.harmful },
+    { value: "child", label: t.report.reasons.child },
+    { value: "copyright", label: t.report.reasons.copyright },
+    { value: "other", label: t.report.reasons.other },
+  ];
+
   const handleSubmit = async () => {
     if (!user) {
       toast({
-        title: "Giriş Yapın",
-        description: "Video bildirmek için giriş yapmalısınız.",
+        title: t.common.signIn,
+        description: t.report.signInRequired,
         variant: "destructive",
       });
       return;
@@ -58,8 +60,8 @@ const ReportVideoDialog = ({ videoId, videoTitle }: ReportVideoDialogProps) => {
 
     if (!reason) {
       toast({
-        title: "Neden Seçin",
-        description: "Lütfen bir bildirim nedeni seçin.",
+        title: t.common.error,
+        description: t.report.selectReason,
         variant: "destructive",
       });
       return;
@@ -84,21 +86,21 @@ const ReportVideoDialog = ({ videoId, videoTitle }: ReportVideoDialogProps) => {
     if (error) {
       if (error.code === '23505') {
         toast({
-          title: "Zaten Bildirildi",
-          description: "Bu videoyu daha önce bildirdiniz.",
+          title: t.report.alreadyReported,
+          description: t.report.alreadyReportedDesc,
           variant: "destructive",
         });
       } else {
         toast({
-          title: "Hata",
-          description: "Bildirim gönderilirken bir hata oluştu.",
+          title: t.common.error,
+          description: t.report.reportError,
           variant: "destructive",
         });
       }
     } else {
       toast({
-        title: "Bildirim Gönderildi",
-        description: "Raporunuz moderatörlere iletildi. Teşekkürler!",
+        title: t.report.reportSent,
+        description: t.report.reportSentDesc,
       });
       setOpen(false);
       setReason("");
@@ -113,23 +115,23 @@ const ReportVideoDialog = ({ videoId, videoTitle }: ReportVideoDialogProps) => {
       <DialogTrigger asChild>
         <Button variant="ghost" size="sm" className="gap-2 text-muted-foreground">
           <Flag className="w-4 h-4" />
-          Bildir
+          {t.report.reportBtn}
         </Button>
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Video Bildir</DialogTitle>
+          <DialogTitle>{t.report.title}</DialogTitle>
           <DialogDescription>
-            "{videoTitle}" videosunu bildirmek üzeresiniz.
+            "{videoTitle}" {t.report.description}
           </DialogDescription>
         </DialogHeader>
         
         <div className="space-y-4">
           <div className="space-y-2">
-            <label className="text-sm font-medium">Bildirim Nedeni</label>
+            <label className="text-sm font-medium">{t.report.reasonLabel}</label>
             <Select value={reason} onValueChange={setReason}>
               <SelectTrigger>
-                <SelectValue placeholder="Bir neden seçin" />
+                <SelectValue placeholder={t.report.reasonPlaceholder} />
               </SelectTrigger>
               <SelectContent>
                 {REPORT_REASONS.map((r) => (
@@ -142,9 +144,9 @@ const ReportVideoDialog = ({ videoId, videoTitle }: ReportVideoDialogProps) => {
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-medium">Ek Detaylar (Opsiyonel)</label>
+            <label className="text-sm font-medium">{t.report.detailsLabel}</label>
             <Textarea
-              placeholder="Daha fazla bilgi verin..."
+              placeholder={t.report.detailsPlaceholder}
               value={details}
               onChange={(e) => setDetails(e.target.value)}
               className="min-h-[100px]"
@@ -155,14 +157,14 @@ const ReportVideoDialog = ({ videoId, videoTitle }: ReportVideoDialogProps) => {
 
         <DialogFooter>
           <Button variant="outline" onClick={() => setOpen(false)}>
-            İptal
+            {t.common.cancel}
           </Button>
           <Button 
             variant="destructive" 
             onClick={handleSubmit}
             disabled={!reason || submitting}
           >
-            {submitting ? "Gönderiliyor..." : "Bildir"}
+            {submitting ? t.report.submitting : t.report.reportBtn}
           </Button>
         </DialogFooter>
       </DialogContent>

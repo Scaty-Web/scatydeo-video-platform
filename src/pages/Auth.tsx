@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { useLanguage } from "@/hooks/useLanguage";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -8,11 +9,8 @@ import { Eye, EyeOff, Mail, Lock, User, Sparkles } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
 
-const emailSchema = z.string().email("Geçerli bir e-posta adresi girin");
-const passwordSchema = z.string().min(6, "Şifre en az 6 karakter olmalı");
-const usernameSchema = z.string().min(3, "Kullanıcı adı en az 3 karakter olmalı").max(20, "Kullanıcı adı en fazla 20 karakter olabilir");
-
 const Auth = () => {
+  const { t } = useLanguage();
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -24,6 +22,10 @@ const Auth = () => {
   const { signIn, signUp, user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  const emailSchema = z.string().email(t.auth.validEmail);
+  const passwordSchema = z.string().min(6, t.auth.minPassword);
+  const usernameSchema = z.string().min(3, t.auth.minUsername).max(20, t.auth.maxUsername);
 
   useEffect(() => {
     if (user) {
@@ -68,21 +70,21 @@ const Auth = () => {
         if (error) {
           if (error.message.includes("Invalid login credentials")) {
             toast({
-              title: "Giriş Başarısız",
-              description: "E-posta veya şifre hatalı.",
+              title: t.auth.loginFailed,
+              description: t.auth.invalidCredentials,
               variant: "destructive",
             });
           } else {
             toast({
-              title: "Hata",
+              title: t.common.error,
               description: error.message,
               variant: "destructive",
             });
           }
         } else {
           toast({
-            title: "Hoş Geldiniz!",
-            description: "Başarıyla giriş yaptınız.",
+            title: t.auth.welcome,
+            description: t.auth.loginSuccess,
           });
         }
       } else {
@@ -90,28 +92,28 @@ const Auth = () => {
         if (error) {
           if (error.message.includes("already registered")) {
             toast({
-              title: "Kayıt Başarısız",
-              description: "Bu e-posta adresi zaten kayıtlı.",
+              title: t.auth.signupFailed,
+              description: t.auth.emailExists,
               variant: "destructive",
             });
           } else {
             toast({
-              title: "Hata",
+              title: t.common.error,
               description: error.message,
               variant: "destructive",
             });
           }
         } else {
           toast({
-            title: "Kayıt Başarılı!",
-            description: "Hesabınız oluşturuldu. Otomatik giriş yapılıyor...",
+            title: t.auth.signupSuccess,
+            description: t.auth.accountCreated,
           });
         }
       }
     } catch (error) {
       toast({
-        title: "Hata",
-        description: "Bir şeyler yanlış gitti. Lütfen tekrar deneyin.",
+        title: t.common.error,
+        description: t.auth.somethingWrong,
         variant: "destructive",
       });
     } finally {
@@ -135,7 +137,7 @@ const Auth = () => {
             <span className="font-display text-3xl font-bold glow-text">Scatydeo</span>
           </a>
           <p className="text-muted-foreground mt-2">
-            {isLogin ? "Hesabınıza giriş yapın" : "Yeni hesap oluşturun"}
+            {isLogin ? t.auth.loginTitle : t.auth.signupTitle}
           </p>
         </div>
 
@@ -145,14 +147,14 @@ const Auth = () => {
             {!isLogin && (
               <div className="space-y-2">
                 <Label htmlFor="username" className="text-foreground">
-                  Kullanıcı Adı
+                  {t.auth.username}
                 </Label>
                 <div className="relative">
                   <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                   <Input
                     id="username"
                     type="text"
-                    placeholder="kullanici_adi"
+                    placeholder={t.auth.usernamePlaceholder}
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
                     className="pl-10 bg-background/50 border-primary/30 focus:border-primary"
@@ -166,14 +168,14 @@ const Auth = () => {
 
             <div className="space-y-2">
               <Label htmlFor="email" className="text-foreground">
-                E-posta
+                {t.auth.email}
               </Label>
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                 <Input
                   id="email"
                   type="email"
-                  placeholder="ornek@email.com"
+                  placeholder={t.auth.emailPlaceholder}
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="pl-10 bg-background/50 border-primary/30 focus:border-primary"
@@ -186,7 +188,7 @@ const Auth = () => {
 
             <div className="space-y-2">
               <Label htmlFor="password" className="text-foreground">
-                Şifre
+                {t.auth.password}
               </Label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
@@ -220,17 +222,17 @@ const Auth = () => {
               {isLoading ? (
                 <div className="flex items-center gap-2">
                   <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  {isLogin ? "Giriş yapılıyor..." : "Kayıt olunuyor..."}
+                  {isLogin ? t.auth.loggingIn : t.auth.signingUp}
                 </div>
               ) : (
-                isLogin ? "Giriş Yap" : "Kayıt Ol"
+                isLogin ? t.auth.loginBtn : t.auth.signupBtn
               )}
             </Button>
           </form>
 
           <div className="mt-6 text-center">
             <p className="text-muted-foreground">
-              {isLogin ? "Hesabınız yok mu?" : "Zaten hesabınız var mı?"}{" "}
+              {isLogin ? t.auth.noAccount : t.auth.hasAccount}{" "}
               <button
                 type="button"
                 onClick={() => {
@@ -239,7 +241,7 @@ const Auth = () => {
                 }}
                 className="text-primary hover:text-accent transition-colors font-medium"
               >
-                {isLogin ? "Kayıt Ol" : "Giriş Yap"}
+                {isLogin ? t.auth.signupBtn : t.auth.loginBtn}
               </button>
             </p>
           </div>
@@ -247,11 +249,11 @@ const Auth = () => {
 
         {/* Terms */}
         <p className="text-center text-sm text-muted-foreground mt-6">
-          Devam ederek{" "}
+          {t.auth.termsText}{" "}
           <a href="/rules" className="text-primary hover:underline">
-            Kullanım Koşullarını
+            {t.auth.termsLink}
           </a>{" "}
-          kabul etmiş olursunuz.
+          {t.auth.termsAccept}
         </p>
       </div>
     </div>

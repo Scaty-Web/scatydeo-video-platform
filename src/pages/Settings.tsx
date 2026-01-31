@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useLanguage } from "@/hooks/useLanguage";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
@@ -24,6 +25,7 @@ interface Profile {
 
 const Settings = () => {
   const { user, signOut } = useAuth();
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -79,16 +81,16 @@ const Settings = () => {
 
     if (error) {
       toast({
-        title: "Hata",
+        title: t.common.error,
         description: error.message.includes("unique") 
-          ? "Bu kullanıcı adı zaten kullanılıyor." 
-          : "Profil güncellenirken bir hata oluştu.",
+          ? t.settings.usernameExists 
+          : t.settings.updateError,
         variant: "destructive",
       });
     } else {
       toast({
-        title: "Başarılı",
-        description: "Profiliniz güncellendi.",
+        title: t.common.success,
+        description: t.settings.profileUpdated,
       });
       fetchProfile();
     }
@@ -121,22 +123,22 @@ const Settings = () => {
         <div className="max-w-4xl mx-auto">
           <h1 className="text-3xl font-bold mb-8 flex items-center gap-2">
             <SettingsIcon className="w-8 h-8" />
-            Ayarlar
+            {t.settings.title}
           </h1>
 
           <Tabs defaultValue="profile" className="space-y-6">
             <TabsList className="bg-muted/30">
               <TabsTrigger value="profile" className="gap-2">
                 <User className="w-4 h-4" />
-                Profil
+                {t.settings.profile}
               </TabsTrigger>
               <TabsTrigger value="notifications" className="gap-2">
                 <Bell className="w-4 h-4" />
-                Bildirimler
+                {t.settings.notifications}
               </TabsTrigger>
               <TabsTrigger value="privacy" className="gap-2">
                 <Shield className="w-4 h-4" />
-                Gizlilik
+                {t.settings.privacy}
               </TabsTrigger>
             </TabsList>
 
@@ -151,7 +153,7 @@ const Settings = () => {
                     </AvatarFallback>
                   </Avatar>
                   <div className="space-y-2 flex-1">
-                    <Label htmlFor="avatar">Avatar URL</Label>
+                    <Label htmlFor="avatar">{t.settings.avatarUrl}</Label>
                     <Input
                       id="avatar"
                       placeholder="https://example.com/avatar.jpg"
@@ -164,10 +166,10 @@ const Settings = () => {
 
                 {/* Display Name */}
                 <div className="space-y-2">
-                  <Label htmlFor="displayName">Görünen Ad</Label>
+                  <Label htmlFor="displayName">{t.settings.displayName}</Label>
                   <Input
                     id="displayName"
-                    placeholder="Ad Soyad"
+                    placeholder={t.settings.displayNamePlaceholder}
                     value={displayName}
                     onChange={(e) => setDisplayName(e.target.value)}
                     className="bg-background/50 border-primary/30"
@@ -176,25 +178,25 @@ const Settings = () => {
 
                 {/* Username */}
                 <div className="space-y-2">
-                  <Label htmlFor="username">Kullanıcı Adı</Label>
+                  <Label htmlFor="username">{t.auth.username}</Label>
                   <Input
                     id="username"
-                    placeholder="kullanici_adi"
+                    placeholder={t.settings.usernamePlaceholder}
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
                     className="bg-background/50 border-primary/30"
                   />
                   <p className="text-sm text-muted-foreground">
-                    Kanal URL'niz: scatydeo.com/channel/{username}
+                    {t.settings.channelUrl} scatydeo.com/channel/{username}
                   </p>
                 </div>
 
                 {/* Bio */}
                 <div className="space-y-2">
-                  <Label htmlFor="bio">Hakkında</Label>
+                  <Label htmlFor="bio">{t.settings.about}</Label>
                   <Textarea
                     id="bio"
-                    placeholder="Kendinizi tanıtın..."
+                    placeholder={t.settings.aboutPlaceholder}
                     value={bio}
                     onChange={(e) => setBio(e.target.value)}
                     className="bg-background/50 border-primary/30 min-h-[100px]"
@@ -206,36 +208,36 @@ const Settings = () => {
                   onClick={handleSave}
                   disabled={saving}
                 >
-                  {saving ? "Kaydediliyor..." : "Değişiklikleri Kaydet"}
+                  {saving ? t.settings.saving : t.settings.saveChanges}
                 </Button>
               </div>
             </TabsContent>
 
             <TabsContent value="notifications">
               <div className="glass-card p-6 rounded-xl">
-                <h3 className="font-bold text-lg mb-4">Bildirim Ayarları</h3>
+                <h3 className="font-bold text-lg mb-4">{t.settings.notificationSettings}</h3>
                 <p className="text-muted-foreground">
-                  Bildirim ayarları yakında eklenecek.
+                  {t.settings.notificationComingSoon}
                 </p>
               </div>
             </TabsContent>
 
             <TabsContent value="privacy">
               <div className="glass-card p-6 rounded-xl space-y-6">
-                <h3 className="font-bold text-lg">Gizlilik ve Güvenlik</h3>
+                <h3 className="font-bold text-lg">{t.settings.privacySecurity}</h3>
                 <p className="text-muted-foreground">
-                  Gizlilik ayarları yakında eklenecek.
+                  {t.settings.privacyComingSoon}
                 </p>
 
                 <div className="pt-6 border-t border-primary/20">
-                  <h4 className="font-semibold text-red-400 mb-2">Tehlikeli Bölge</h4>
+                  <h4 className="font-semibold text-red-400 mb-2">{t.settings.dangerZone}</h4>
                   <Button
                     variant="outline"
                     className="border-red-500/50 text-red-400 hover:bg-red-500/10"
                     onClick={handleSignOut}
                   >
                     <LogOut className="w-4 h-4 mr-2" />
-                    Çıkış Yap
+                    {t.common.signOut}
                   </Button>
                 </div>
               </div>

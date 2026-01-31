@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useLanguage } from "@/hooks/useLanguage";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
@@ -13,6 +14,7 @@ import { useToast } from "@/hooks/use-toast";
 
 const Upload = () => {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const { toast } = useToast();
   
@@ -28,8 +30,8 @@ const Upload = () => {
     if (file) {
       if (file.size > 500 * 1024 * 1024) {
         toast({
-          title: "Dosya Çok Büyük",
-          description: "Video dosyası 500MB'dan küçük olmalıdır.",
+          title: t.upload.fileTooLarge,
+          description: t.upload.videoTooLarge,
           variant: "destructive",
         });
         return;
@@ -43,8 +45,8 @@ const Upload = () => {
     if (file) {
       if (file.size > 5 * 1024 * 1024) {
         toast({
-          title: "Dosya Çok Büyük",
-          description: "Thumbnail 5MB'dan küçük olmalıdır.",
+          title: t.upload.fileTooLarge,
+          description: t.upload.thumbnailTooLarge,
           variant: "destructive",
         });
         return;
@@ -58,8 +60,8 @@ const Upload = () => {
     
     if (!user) {
       toast({
-        title: "Giriş Yapın",
-        description: "Video yüklemek için giriş yapmalısınız.",
+        title: t.upload.signInRequired,
+        description: t.upload.signInToUpload,
         variant: "destructive",
       });
       return;
@@ -67,8 +69,8 @@ const Upload = () => {
 
     if (!title.trim()) {
       toast({
-        title: "Başlık Gerekli",
-        description: "Lütfen video için bir başlık girin.",
+        title: t.upload.titleRequired,
+        description: t.upload.titleRequiredDesc,
         variant: "destructive",
       });
       return;
@@ -76,8 +78,8 @@ const Upload = () => {
 
     if (!videoFile) {
       toast({
-        title: "Video Gerekli",
-        description: "Lütfen bir video dosyası seçin.",
+        title: t.upload.videoRequired,
+        description: t.upload.videoRequiredDesc,
         variant: "destructive",
       });
       return;
@@ -148,16 +150,16 @@ const Upload = () => {
       setUploadProgress(100);
 
       toast({
-        title: "Video Yüklendi",
-        description: "Videonuz başarıyla yüklendi!",
+        title: t.upload.uploadSuccess,
+        description: t.upload.uploadSuccessDesc,
       });
 
       navigate(`/watch/${videoData.id}`);
     } catch (error: any) {
       console.error("Upload error:", error);
       toast({
-        title: "Yükleme Hatası",
-        description: error.message || "Video yüklenirken bir hata oluştu.",
+        title: t.upload.uploadError,
+        description: error.message || t.upload.uploadErrorDesc,
         variant: "destructive",
       });
     } finally {
@@ -172,12 +174,12 @@ const Upload = () => {
         <Navbar />
         <div className="container mx-auto px-4 py-20 text-center">
           <AlertTriangle className="w-16 h-16 text-primary mx-auto mb-4" />
-          <h1 className="text-2xl font-bold mb-2">Giriş Yapın</h1>
+          <h1 className="text-2xl font-bold mb-2">{t.upload.signInRequired}</h1>
           <p className="text-muted-foreground mb-6">
-            Video yüklemek için giriş yapmalısınız.
+            {t.upload.signInToUpload}
           </p>
           <Button variant="hero" onClick={() => navigate("/auth")}>
-            Giriş Yap
+            {t.common.signIn}
           </Button>
         </div>
         <Footer />
@@ -195,39 +197,39 @@ const Upload = () => {
             <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-accent flex items-center justify-center mx-auto mb-4 shadow-glow">
               <UploadIcon className="w-8 h-8 text-primary-foreground" />
             </div>
-            <h1 className="text-3xl font-bold">Video Yükle</h1>
+            <h1 className="text-3xl font-bold">{t.upload.title}</h1>
             <p className="text-muted-foreground mt-2">
-              Videonuzu yükleyin ve dünyayla paylaşın
+              {t.upload.subtitle}
             </p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-2">
-              <Label htmlFor="title">Video Başlığı *</Label>
+              <Label htmlFor="title">{t.upload.videoTitle} *</Label>
               <Input
                 id="title"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                placeholder="Videonuz için çekici bir başlık girin"
+                placeholder={t.upload.videoTitlePlaceholder}
                 className="bg-muted/30 border-primary/30"
                 maxLength={100}
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="description">Açıklama</Label>
+              <Label htmlFor="description">{t.upload.description}</Label>
               <Textarea
                 id="description"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                placeholder="Videonuz hakkında bilgi verin"
+                placeholder={t.upload.descriptionPlaceholder}
                 className="bg-muted/30 border-primary/30 min-h-[120px]"
                 maxLength={5000}
               />
             </div>
 
             <div className="space-y-2">
-              <Label>Video Dosyası *</Label>
+              <Label>{t.upload.videoFile} *</Label>
               <div className="border-2 border-dashed border-primary/30 rounded-xl p-8 text-center hover:border-primary/50 transition-colors">
                 <input
                   type="file"
@@ -246,10 +248,10 @@ const Upload = () => {
                     <div>
                       <Video className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
                       <p className="text-muted-foreground">
-                        Video dosyası seçmek için tıklayın
+                        {t.upload.selectVideoFile}
                       </p>
                       <p className="text-sm text-muted-foreground mt-1">
-                        MP4, WebM, MOV (Maks. 500MB)
+                        {t.upload.videoFormats}
                       </p>
                     </div>
                   )}
@@ -258,7 +260,7 @@ const Upload = () => {
             </div>
 
             <div className="space-y-2">
-              <Label>Kapak Resmi (Thumbnail)</Label>
+              <Label>{t.upload.thumbnail}</Label>
               <div className="border-2 border-dashed border-primary/30 rounded-xl p-8 text-center hover:border-primary/50 transition-colors">
                 <input
                   type="file"
@@ -277,10 +279,10 @@ const Upload = () => {
                     <div>
                       <Image className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
                       <p className="text-muted-foreground">
-                        Kapak resmi seçmek için tıklayın
+                        {t.upload.selectThumbnail}
                       </p>
                       <p className="text-sm text-muted-foreground mt-1">
-                        JPG, PNG, WebP (Maks. 5MB)
+                        {t.upload.thumbnailFormats}
                       </p>
                     </div>
                   )}
@@ -297,7 +299,7 @@ const Upload = () => {
                   />
                 </div>
                 <p className="text-sm text-center text-muted-foreground">
-                  Yükleniyor... %{uploadProgress}
+                  {t.upload.uploading} %{uploadProgress}
                 </p>
               </div>
             )}
@@ -309,7 +311,7 @@ const Upload = () => {
               className="w-full"
               disabled={uploading || !title.trim() || !videoFile}
             >
-              {uploading ? "Yükleniyor..." : "Video Yükle"}
+              {uploading ? t.upload.uploading : t.upload.uploadBtn}
             </Button>
           </form>
         </div>

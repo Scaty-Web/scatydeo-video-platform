@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useLanguage } from "@/hooks/useLanguage";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
@@ -19,6 +20,7 @@ interface Notification {
 
 const Notifications = () => {
   const { user } = useAuth();
+  const { t, language } = useLanguage();
   const navigate = useNavigate();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
@@ -88,13 +90,13 @@ const Notifications = () => {
     const diffDays = Math.floor(diffMs / 86400000);
 
     if (diffMins < 60) {
-      return `${diffMins} dakika önce`;
+      return `${diffMins} ${t.notifications.minutesAgo}`;
     } else if (diffHours < 24) {
-      return `${diffHours} saat önce`;
+      return `${diffHours} ${t.notifications.hoursAgo}`;
     } else if (diffDays < 7) {
-      return `${diffDays} gün önce`;
+      return `${diffDays} ${t.notifications.daysAgo}`;
     } else {
-      return notifDate.toLocaleDateString("tr-TR");
+      return notifDate.toLocaleDateString(language === 'tr' ? "tr-TR" : "en-US");
     }
   };
 
@@ -119,12 +121,12 @@ const Notifications = () => {
           <div className="flex items-center justify-between mb-8">
             <h1 className="text-3xl font-bold flex items-center gap-2">
               <Bell className="w-8 h-8" />
-              Bildirimler
+              {t.notifications.title}
             </h1>
             {notifications.some(n => !n.is_read) && (
               <Button variant="outline" size="sm" onClick={markAllAsRead}>
                 <Check className="w-4 h-4 mr-2" />
-                Tümünü Okundu İşaretle
+                {t.notifications.markAllRead}
               </Button>
             )}
           </div>
@@ -132,9 +134,9 @@ const Notifications = () => {
           {notifications.length === 0 ? (
             <div className="text-center py-16 glass-card rounded-xl">
               <Bell className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-              <h2 className="text-xl font-semibold mb-2">Bildirim Yok</h2>
+              <h2 className="text-xl font-semibold mb-2">{t.notifications.noNotifications}</h2>
               <p className="text-muted-foreground">
-                Henüz hiç bildiriminiz yok. Yeni bildirimler burada görünecek.
+                {t.notifications.noNotificationsDesc}
               </p>
             </div>
           ) : (
