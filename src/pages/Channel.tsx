@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useLanguage } from "@/hooks/useLanguage";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
@@ -33,6 +34,7 @@ interface Video {
 const Channel = () => {
   const { username } = useParams();
   const { user } = useAuth();
+  const { t, language } = useLanguage();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [videos, setVideos] = useState<Video[]>([]);
   const [loading, setLoading] = useState(true);
@@ -109,7 +111,7 @@ const Channel = () => {
   };
 
   const formatDate = (date: string) => {
-    return new Date(date).toLocaleDateString("tr-TR", {
+    return new Date(date).toLocaleDateString(language === 'tr' ? "tr-TR" : "en-US", {
       year: "numeric",
       month: "long",
     });
@@ -142,9 +144,9 @@ const Channel = () => {
         <Navbar />
         <div className="container mx-auto px-4 py-20 text-center">
           <AlertTriangle className="w-16 h-16 text-primary mx-auto mb-4" />
-          <h1 className="text-2xl font-bold mb-2">Kanal Bulunamadı</h1>
+          <h1 className="text-2xl font-bold mb-2">{t.channel.notFound}</h1>
           <p className="text-muted-foreground">
-            Aradığınız kanal mevcut değil.
+            {t.channel.notFoundDesc}
           </p>
         </div>
         <Footer />
@@ -178,15 +180,15 @@ const Channel = () => {
             <div className="flex flex-wrap items-center justify-center md:justify-start gap-4 mt-2 text-sm text-muted-foreground">
               <span className="flex items-center gap-1">
                 <Users className="w-4 h-4" />
-                {profile.subscribers_count.toLocaleString("tr-TR")} abone
+                {profile.subscribers_count.toLocaleString(language === 'tr' ? "tr-TR" : "en-US")} {t.common.subscribers}
               </span>
               <span className="flex items-center gap-1">
                 <VideoIcon className="w-4 h-4" />
-                {videos.length} video
+                {videos.length} {language === 'tr' ? 'video' : 'videos'}
               </span>
               <span className="flex items-center gap-1">
                 <Calendar className="w-4 h-4" />
-                {formatDate(profile.created_at)} tarihinde katıldı
+                {formatDate(profile.created_at)} {t.channel.joinedAt}
               </span>
             </div>
           </div>
@@ -196,7 +198,7 @@ const Channel = () => {
               variant={isSubscribed ? "outline" : "hero"}
               onClick={handleSubscribe}
             >
-              {isSubscribed ? "Abone Olundu" : "Abone Ol"}
+              {isSubscribed ? t.common.subscribed : t.common.subscribe}
             </Button>
           )}
         </div>
@@ -211,15 +213,15 @@ const Channel = () => {
         {/* Tabs */}
         <Tabs defaultValue="videos" className="mb-12">
           <TabsList className="bg-muted/30">
-            <TabsTrigger value="videos">Videolar</TabsTrigger>
-            <TabsTrigger value="about">Hakkında</TabsTrigger>
+            <TabsTrigger value="videos">{t.channel.videos}</TabsTrigger>
+            <TabsTrigger value="about">{t.channel.aboutTab}</TabsTrigger>
           </TabsList>
 
           <TabsContent value="videos" className="mt-6">
             {videos.length === 0 ? (
               <div className="text-center py-16">
                 <VideoIcon className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-                <p className="text-muted-foreground">Henüz video yok</p>
+                <p className="text-muted-foreground">{t.channel.noVideos}</p>
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -241,13 +243,13 @@ const Channel = () => {
 
           <TabsContent value="about" className="mt-6">
             <div className="glass-card p-6 rounded-xl max-w-2xl">
-              <h3 className="font-bold text-lg mb-4">Kanal Hakkında</h3>
+              <h3 className="font-bold text-lg mb-4">{t.channel.channelAbout}</h3>
               <p className="text-muted-foreground">
-                {profile.bio || "Henüz bir açıklama eklenmemiş."}
+                {profile.bio || t.channel.noDescription}
               </p>
               <div className="mt-6 pt-6 border-t border-primary/20">
                 <p className="text-sm text-muted-foreground">
-                  <strong>Katılma Tarihi:</strong> {formatDate(profile.created_at)}
+                  <strong>{t.channel.joinDate}</strong> {formatDate(profile.created_at)}
                 </p>
               </div>
             </div>

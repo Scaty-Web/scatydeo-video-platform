@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useLanguage } from "@/hooks/useLanguage";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import VideoPlayer from "@/components/VideoPlayer";
@@ -19,6 +20,7 @@ import {
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import ReportVideoDialog from "@/components/ReportVideoDialog";
+
 interface Video {
   id: string;
   title: string;
@@ -52,6 +54,7 @@ interface Comment {
 const Watch = () => {
   const { id } = useParams();
   const { user } = useAuth();
+  const { t, language } = useLanguage();
   const { toast } = useToast();
   const [video, setVideo] = useState<Video | null>(null);
   const [comments, setComments] = useState<Comment[]>([]);
@@ -148,8 +151,8 @@ const Watch = () => {
   const handleSubscribe = async () => {
     if (!user) {
       toast({
-        title: "Giriş Yapın",
-        description: "Abone olmak için giriş yapmalısınız.",
+        title: t.common.signIn,
+        description: t.watch.signInToSubscribe,
         variant: "destructive",
       });
       return;
@@ -165,8 +168,8 @@ const Watch = () => {
         .eq("subscriber_id", user.id);
       setSubscribed(false);
       toast({
-        title: "Abonelik İptal Edildi",
-        description: "Artık bu kanalı takip etmiyorsunuz.",
+        title: t.watch.subscriptionCancelled,
+        description: t.watch.notFollowingChannel,
       });
     } else {
       await supabase
@@ -174,8 +177,8 @@ const Watch = () => {
         .insert({ channel_id: video.user_id, subscriber_id: user.id });
       setSubscribed(true);
       toast({
-        title: "Abone Olundu",
-        description: "Bu kanalı takip ediyorsunuz!",
+        title: t.watch.subscribedSuccess,
+        description: t.watch.followingChannel,
       });
     }
   };
@@ -183,8 +186,8 @@ const Watch = () => {
   const handleLike = async () => {
     if (!user) {
       toast({
-        title: "Giriş Yapın",
-        description: "Beğenmek için giriş yapmalısınız.",
+        title: t.common.signIn,
+        description: t.watch.signInToLike,
         variant: "destructive",
       });
       return;
@@ -214,8 +217,8 @@ const Watch = () => {
   const handleComment = async () => {
     if (!user) {
       toast({
-        title: "Giriş Yapın",
-        description: "Yorum yapmak için giriş yapmalısınız.",
+        title: t.common.signIn,
+        description: t.watch.signInToComment,
         variant: "destructive",
       });
       return;
@@ -235,14 +238,14 @@ const Watch = () => {
       setNewComment("");
       fetchComments();
       toast({
-        title: "Yorum Eklendi",
-        description: "Yorumunuz başarıyla eklendi.",
+        title: t.watch.commentAdded,
+        description: t.watch.commentAddedDesc,
       });
     }
   };
 
   const formatDate = (date: string) => {
-    return new Date(date).toLocaleDateString("tr-TR", {
+    return new Date(date).toLocaleDateString(language === 'tr' ? "tr-TR" : "en-US", {
       year: "numeric",
       month: "long",
       day: "numeric",
@@ -267,12 +270,12 @@ const Watch = () => {
         <Navbar />
         <div className="container mx-auto px-4 py-20 text-center">
           <AlertTriangle className="w-16 h-16 text-primary mx-auto mb-4" />
-          <h1 className="text-2xl font-bold mb-2">Video Bulunamadı</h1>
+          <h1 className="text-2xl font-bold mb-2">{t.watch.videoNotFound}</h1>
           <p className="text-muted-foreground mb-6">
-            Aradığınız video mevcut değil veya kaldırılmış olabilir.
+            {t.watch.videoNotFoundDesc}
           </p>
           <Link to="/">
-            <Button variant="hero">Ana Sayfaya Dön</Button>
+            <Button variant="hero">{t.common.goHome}</Button>
           </Link>
         </div>
         <Footer />
@@ -298,7 +301,7 @@ const Watch = () => {
                 />
               ) : (
                 <div className="w-full h-full flex items-center justify-center bg-muted rounded-xl">
-                  <p className="text-muted-foreground">Video yüklenemedi</p>
+                  <p className="text-muted-foreground">{t.watch.videoLoadFailed}</p>
                 </div>
               )}
             </div>
@@ -310,7 +313,7 @@ const Watch = () => {
               <div className="flex flex-wrap items-center gap-4 text-muted-foreground">
                 <span className="flex items-center gap-1">
                   <Eye className="w-4 h-4" />
-                  {video.views_count.toLocaleString("tr-TR")} görüntülenme
+                  {video.views_count.toLocaleString(language === 'tr' ? "tr-TR" : "en-US")} {t.common.views}
                 </span>
                 <span className="flex items-center gap-1">
                   <Calendar className="w-4 h-4" />
@@ -331,7 +334,7 @@ const Watch = () => {
                 </Button>
                 <Button variant="outline" size="sm" className="gap-2">
                   <Share2 className="w-4 h-4" />
-                  Paylaş
+                  {t.common.share}
                 </Button>
                 <ReportVideoDialog videoId={video.id} videoTitle={video.title} />
               </div>
@@ -351,7 +354,7 @@ const Watch = () => {
                   <div>
                     <p className="font-semibold">{video.profiles.display_name}</p>
                     <p className="text-sm text-muted-foreground">
-                      {video.profiles.subscribers_count.toLocaleString("tr-TR")} abone
+                      {video.profiles.subscribers_count.toLocaleString(language === 'tr' ? "tr-TR" : "en-US")} {t.common.subscribers}
                     </p>
                   </div>
                 </Link>
@@ -361,7 +364,7 @@ const Watch = () => {
                     size="sm"
                     onClick={handleSubscribe}
                   >
-                    {subscribed ? "Abone" : "Abone Ol"}
+                    {subscribed ? t.common.subscribed : t.common.subscribe}
                   </Button>
                 )}
               </div>
@@ -378,13 +381,13 @@ const Watch = () => {
             <div className="space-y-6">
               <h2 className="text-xl font-bold flex items-center gap-2">
                 <MessageSquare className="w-5 h-5" />
-                {comments.length} Yorum
+                {comments.length} {t.common.comments}
               </h2>
 
               {/* Add Comment */}
               <div className="space-y-3">
                 <Textarea
-                  placeholder={user ? "Yorum ekle..." : "Yorum yapmak için giriş yapın"}
+                  placeholder={user ? t.watch.addComment : t.watch.addCommentSignIn}
                   value={newComment}
                   onChange={(e) => setNewComment(e.target.value)}
                   disabled={!user}
@@ -397,7 +400,7 @@ const Watch = () => {
                     onClick={handleComment}
                     disabled={!user || !newComment.trim()}
                   >
-                    Yorum Yap
+                    {t.watch.postComment}
                   </Button>
                 </div>
               </div>
@@ -406,7 +409,7 @@ const Watch = () => {
               <div className="space-y-4">
                 {comments.length === 0 ? (
                   <p className="text-center text-muted-foreground py-8">
-                    Henüz yorum yok. İlk yorumu siz yapın!
+                    {t.watch.noComments}
                   </p>
                 ) : (
                   comments.map((comment) => (
@@ -440,9 +443,9 @@ const Watch = () => {
 
           {/* Sidebar - Related Videos */}
           <div className="space-y-4">
-            <h3 className="font-bold text-lg">Önerilen Videolar</h3>
+            <h3 className="font-bold text-lg">{t.watch.suggestedVideos}</h3>
             <div className="text-center py-8 text-muted-foreground">
-              <p>Yakında...</p>
+              <p>{t.watch.comingSoon}</p>
             </div>
           </div>
         </div>

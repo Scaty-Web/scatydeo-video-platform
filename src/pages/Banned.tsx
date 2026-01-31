@@ -1,10 +1,12 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useLanguage } from "@/hooks/useLanguage";
 import { Ban, AlertTriangle } from "lucide-react";
 
 const Banned = () => {
   const { user, signOut } = useAuth();
+  const { t, language } = useLanguage();
   const [banInfo, setBanInfo] = useState<{ reason: string; banned_at: string } | null>(null);
 
   useEffect(() => {
@@ -25,7 +27,7 @@ const Banned = () => {
   };
 
   const formatDate = (date: string) => {
-    return new Date(date).toLocaleDateString("tr-TR", {
+    return new Date(date).toLocaleDateString(language === 'tr' ? "tr-TR" : "en-US", {
       year: "numeric",
       month: "long",
       day: "numeric",
@@ -43,28 +45,28 @@ const Banned = () => {
         
         <div className="space-y-2">
           <h1 className="text-4xl font-bold text-destructive">
-            HESAP ASKIYA ALINDI
+            {t.banned.title}
           </h1>
           <p className="text-xl text-muted-foreground">
-            Scatydeo platformuna erişiminiz kısıtlanmıştır.
+            {t.banned.subtitle}
           </p>
         </div>
 
         <div className="bg-muted/30 border border-destructive/30 rounded-xl p-6 space-y-4">
           <div className="flex items-center gap-2 justify-center text-destructive">
             <AlertTriangle className="w-5 h-5" />
-            <span className="font-semibold">Moderatör Mesajı</span>
+            <span className="font-semibold">{t.banned.moderatorMessage}</span>
           </div>
           
           <div className="text-left space-y-3">
             <div>
-              <p className="text-sm text-muted-foreground">Neden:</p>
-              <p className="font-medium">{banInfo?.reason || "Topluluk kurallarına aykırı davranış"}</p>
+              <p className="text-sm text-muted-foreground">{t.banned.reason}</p>
+              <p className="font-medium">{banInfo?.reason || t.banned.defaultReason}</p>
             </div>
             
             {banInfo?.banned_at && (
               <div>
-                <p className="text-sm text-muted-foreground">Tarih:</p>
+                <p className="text-sm text-muted-foreground">{t.banned.date}</p>
                 <p className="font-medium">{formatDate(banInfo.banned_at)}</p>
               </div>
             )}
@@ -73,15 +75,14 @@ const Banned = () => {
 
         <div className="space-y-4">
           <p className="text-sm text-muted-foreground">
-            Bu kararın hatalı olduğunu düşünüyorsanız, lütfen iletişim sayfasından 
-            bizimle iletişime geçin.
+            {t.banned.appealText}
           </p>
           
           <button 
             onClick={() => signOut()}
             className="text-primary hover:underline"
           >
-            Çıkış Yap
+            {t.common.signOut}
           </button>
         </div>
       </div>

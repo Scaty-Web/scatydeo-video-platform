@@ -2,10 +2,10 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useLanguage } from "@/hooks/useLanguage";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { 
   Shield, 
@@ -71,6 +71,7 @@ interface BannedUser {
 
 const ModeratorPanel = () => {
   const { user } = useAuth();
+  const { t, language } = useLanguage();
   const navigate = useNavigate();
   const { toast } = useToast();
   
@@ -179,14 +180,14 @@ const ModeratorPanel = () => {
 
     if (error) {
       toast({
-        title: "Hata",
-        description: "Video silinirken bir hata oluştu.",
+        title: t.common.error,
+        description: t.moderator.videoDeleteError,
         variant: "destructive",
       });
     } else {
       toast({
-        title: "Video Silindi",
-        description: "Video başarıyla silindi.",
+        title: t.moderator.videoDeleted,
+        description: t.moderator.videoDeletedDesc,
       });
       fetchReports();
     }
@@ -204,10 +205,10 @@ const ModeratorPanel = () => {
 
     if (!error) {
       toast({
-        title: action === 'resolved' ? "Rapor Çözüldü" : "Rapor Reddedildi",
+        title: action === 'resolved' ? t.moderator.reportResolved : t.moderator.reportDismissed,
         description: action === 'resolved' 
-          ? "Rapor başarıyla çözüldü olarak işaretlendi."
-          : "Rapor reddedildi.",
+          ? t.moderator.reportResolvedDesc
+          : t.moderator.reportDismissed,
       });
       fetchReports();
     }
@@ -232,21 +233,21 @@ const ModeratorPanel = () => {
     if (error) {
       if (error.code === '23505') {
         toast({
-          title: "Kullanıcı Zaten Banlı",
-          description: "Bu kullanıcı zaten banlanmış durumda.",
+          title: t.moderator.userAlreadyBanned,
+          description: t.moderator.userAlreadyBannedDesc,
           variant: "destructive",
         });
       } else {
         toast({
-          title: "Hata",
-          description: "Kullanıcı banlanırken bir hata oluştu.",
+          title: t.common.error,
+          description: t.moderator.banError,
           variant: "destructive",
         });
       }
     } else {
       toast({
-        title: "Kullanıcı Banlandı",
-        description: `${userToBan.username} başarıyla banlandı.`,
+        title: t.moderator.userBanned,
+        description: `${userToBan.username} ${t.moderator.userBannedDesc}`,
       });
       setBanDialogOpen(false);
       setBanReason("");
@@ -263,15 +264,15 @@ const ModeratorPanel = () => {
 
     if (!error) {
       toast({
-        title: "Ban Kaldırıldı",
-        description: `${username} kullanıcısının banı kaldırıldı.`,
+        title: t.moderator.unbanSuccess,
+        description: `${username} ${t.moderator.unbanSuccessDesc}`,
       });
       fetchBannedUsers();
     }
   };
 
   const formatDate = (date: string) => {
-    return new Date(date).toLocaleDateString("tr-TR", {
+    return new Date(date).toLocaleDateString(language === 'tr' ? "tr-TR" : "en-US", {
       year: "numeric",
       month: "long",
       day: "numeric",
@@ -298,12 +299,12 @@ const ModeratorPanel = () => {
         <Navbar />
         <div className="container mx-auto px-4 py-20 text-center">
           <AlertTriangle className="w-16 h-16 text-destructive mx-auto mb-4" />
-          <h1 className="text-2xl font-bold mb-2">Erişim Engellendi</h1>
+          <h1 className="text-2xl font-bold mb-2">{t.moderator.accessDenied}</h1>
           <p className="text-muted-foreground mb-6">
-            Bu sayfaya erişim yetkiniz bulunmamaktadır.
+            {t.moderator.accessDeniedDesc}
           </p>
           <Button variant="hero" onClick={() => navigate("/")}>
-            Ana Sayfaya Dön
+            {t.common.goHome}
           </Button>
         </div>
         <Footer />
@@ -324,9 +325,9 @@ const ModeratorPanel = () => {
               <Shield className="w-8 h-8 text-primary-foreground" />
             </div>
             <div>
-              <h1 className="text-3xl font-bold">Moderatör Paneli</h1>
+              <h1 className="text-3xl font-bold">{t.moderator.title}</h1>
               <p className="text-muted-foreground">
-                Platform yönetimi ve içerik denetimi
+                {t.moderator.subtitle}
               </p>
             </div>
           </div>
@@ -335,11 +336,11 @@ const ModeratorPanel = () => {
             <TabsList className="grid w-full grid-cols-2 max-w-md">
               <TabsTrigger value="reports" className="gap-2">
                 <AlertTriangle className="w-4 h-4" />
-                Raporlar {pendingReports.length > 0 && `(${pendingReports.length})`}
+                {t.moderator.reports} {pendingReports.length > 0 && `(${pendingReports.length})`}
               </TabsTrigger>
               <TabsTrigger value="bans" className="gap-2">
                 <Ban className="w-4 h-4" />
-                Banlı Kullanıcılar ({bannedUsers.length})
+                {t.moderator.bannedUsers} ({bannedUsers.length})
               </TabsTrigger>
             </TabsList>
 
@@ -347,7 +348,7 @@ const ModeratorPanel = () => {
               {reports.length === 0 ? (
                 <div className="text-center py-12 bg-muted/30 rounded-xl">
                   <CheckCircle className="w-12 h-12 text-green-500 mx-auto mb-4" />
-                  <p className="text-muted-foreground">Bekleyen rapor bulunmuyor.</p>
+                  <p className="text-muted-foreground">{t.moderator.noReports}</p>
                 </div>
               ) : (
                 reports.map((report) => (
@@ -362,12 +363,12 @@ const ModeratorPanel = () => {
                           />
                         )}
                         <div>
-                          <h3 className="font-semibold">{report.videos?.title || "Video silindi"}</h3>
+                          <h3 className="font-semibold">{report.videos?.title || t.moderator.videoDeletedLabel}</h3>
                           <p className="text-sm text-muted-foreground">
-                            Yükleyen: {report.videos?.profiles?.display_name || "Bilinmiyor"}
+                            {t.moderator.uploadedBy} {report.videos?.profiles?.display_name || t.moderator.unknown}
                           </p>
                           <p className="text-sm text-muted-foreground">
-                            Raporlayan: {report.reporter?.display_name}
+                            {t.moderator.reportedBy} {report.reporter?.display_name}
                           </p>
                         </div>
                       </div>
@@ -378,13 +379,13 @@ const ModeratorPanel = () => {
                           ? 'bg-green-500/20 text-green-500'
                           : 'bg-muted text-muted-foreground'
                       }`}>
-                        {report.status === 'pending' ? 'Bekliyor' : 
-                         report.status === 'resolved' ? 'Çözüldü' : 'Reddedildi'}
+                        {report.status === 'pending' ? t.moderator.pending : 
+                         report.status === 'resolved' ? t.moderator.resolved : t.moderator.dismissed}
                       </span>
                     </div>
                     
                     <div className="p-4 bg-background/50 rounded-lg">
-                      <p className="text-sm font-medium mb-1">Rapor Nedeni:</p>
+                      <p className="text-sm font-medium mb-1">{t.moderator.reportReason}</p>
                       <p>{report.reason}</p>
                     </div>
                     
@@ -402,7 +403,7 @@ const ModeratorPanel = () => {
                               onClick={() => navigate(`/watch/${report.video_id}`)}
                             >
                               <Eye className="w-4 h-4 mr-2" />
-                              Videoyu İzle
+                              {t.moderator.watchVideo}
                             </Button>
                             <Button
                               variant="destructive"
@@ -410,18 +411,18 @@ const ModeratorPanel = () => {
                               onClick={() => handleDeleteVideo(report.video_id)}
                             >
                               <Trash2 className="w-4 h-4 mr-2" />
-                              Videoyu Sil
+                              {t.moderator.deleteVideo}
                             </Button>
                             <Button
                               variant="destructive"
                               size="sm"
                               onClick={() => openBanDialog(
                                 report.videos.user_id,
-                                report.videos.profiles?.username || 'Bilinmiyor'
+                                report.videos.profiles?.username || t.moderator.unknown
                               )}
                             >
                               <Ban className="w-4 h-4 mr-2" />
-                              Kullanıcıyı Banla
+                              {t.moderator.banUser}
                             </Button>
                           </>
                         )}
@@ -431,7 +432,7 @@ const ModeratorPanel = () => {
                           onClick={() => handleResolveReport(report.id, 'resolved')}
                         >
                           <CheckCircle className="w-4 h-4 mr-2" />
-                          Çözüldü
+                          {t.moderator.markResolved}
                         </Button>
                         <Button
                           variant="ghost"
@@ -439,7 +440,7 @@ const ModeratorPanel = () => {
                           onClick={() => handleResolveReport(report.id, 'dismissed')}
                         >
                           <XCircle className="w-4 h-4 mr-2" />
-                          Reddet
+                          {t.moderator.dismiss}
                         </Button>
                       </div>
                     )}
@@ -452,7 +453,7 @@ const ModeratorPanel = () => {
               {bannedUsers.length === 0 ? (
                 <div className="text-center py-12 bg-muted/30 rounded-xl">
                   <User className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                  <p className="text-muted-foreground">Banlı kullanıcı bulunmuyor.</p>
+                  <p className="text-muted-foreground">{t.moderator.noBannedUsers}</p>
                 </div>
               ) : (
                 bannedUsers.map((ban) => (
@@ -466,24 +467,24 @@ const ModeratorPanel = () => {
                           </AvatarFallback>
                         </Avatar>
                         <div>
-                          <p className="font-semibold">{ban.profiles?.display_name || 'Bilinmiyor'}</p>
+                          <p className="font-semibold">{ban.profiles?.display_name || t.moderator.unknown}</p>
                           <p className="text-sm text-muted-foreground">@{ban.profiles?.username}</p>
                         </div>
                       </div>
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => handleUnbanUser(ban.id, ban.profiles?.username || 'Kullanıcı')}
+                        onClick={() => handleUnbanUser(ban.id, ban.profiles?.username || t.moderator.unknown)}
                       >
-                        Ban Kaldır
+                        {t.moderator.unban}
                       </Button>
                     </div>
                     <div className="mt-4 p-4 bg-background/50 rounded-lg">
-                      <p className="text-sm font-medium mb-1">Ban Nedeni:</p>
+                      <p className="text-sm font-medium mb-1">{t.moderator.banReason}</p>
                       <p>{ban.reason}</p>
                     </div>
                     <p className="text-sm text-muted-foreground mt-2">
-                      Banlanma: {formatDate(ban.created_at)}
+                      {t.moderator.banDate} {formatDate(ban.created_at)}
                     </p>
                   </div>
                 ))
@@ -496,28 +497,27 @@ const ModeratorPanel = () => {
       <Dialog open={banDialogOpen} onOpenChange={setBanDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Kullanıcıyı Banla</DialogTitle>
+            <DialogTitle>{t.moderator.banDialogTitle}</DialogTitle>
             <DialogDescription>
-              {userToBan?.username} kullanıcısını banlamak üzeresiniz. 
-              Lütfen ban nedenini belirtin.
+              {t.moderator.banDialogDesc}
             </DialogDescription>
           </DialogHeader>
           <Textarea
-            placeholder="Ban nedeni..."
+            placeholder={t.moderator.banReasonPlaceholder}
             value={banReason}
             onChange={(e) => setBanReason(e.target.value)}
             className="min-h-[100px]"
           />
           <DialogFooter>
             <Button variant="outline" onClick={() => setBanDialogOpen(false)}>
-              İptal
+              {t.common.cancel}
             </Button>
             <Button 
               variant="destructive" 
               onClick={handleBanUser}
               disabled={!banReason.trim()}
             >
-              Banla
+              {t.moderator.banConfirm}
             </Button>
           </DialogFooter>
         </DialogContent>
