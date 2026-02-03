@@ -371,6 +371,18 @@ export const translations = {
       speed: "Hız",
       normal: "Normal",
     },
+    // Search Page
+    search: {
+      title: "Video Ara",
+      placeholder: "Video başlığı girin...",
+      searchBtn: "Ara",
+      resultsFor: "Arama sonuçları:",
+      results: "sonuç",
+      noResults: "Sonuç bulunamadı",
+      noResultsDesc: "Aramanızla eşleşen video bulunamadı. Farklı anahtar kelimeler deneyin.",
+      startSearch: "Arama yapın",
+      startSearchDesc: "Videolarda arama yapmak için yukarıdaki arama kutusunu kullanın.",
+    },
     // 404 Page
     notFound: {
       title: "404",
@@ -749,6 +761,18 @@ export const translations = {
       settings: "Settings",
       speed: "Speed",
       normal: "Normal",
+    },
+    // Search Page
+    search: {
+      title: "Search Videos",
+      placeholder: "Enter video title...",
+      searchBtn: "Search",
+      resultsFor: "Search results for:",
+      results: "results",
+      noResults: "No results found",
+      noResultsDesc: "No videos found matching your search. Try different keywords.",
+      startSearch: "Start searching",
+      startSearchDesc: "Use the search box above to search for videos.",
     },
     // 404 Page
     notFound: {
