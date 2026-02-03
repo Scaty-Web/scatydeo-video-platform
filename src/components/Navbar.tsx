@@ -57,10 +57,10 @@ const Navbar = () => {
           </div>
 
           <div className="hidden md:flex items-center gap-4">
-            <div className="relative">
+            <form onSubmit={(e) => { e.preventDefault(); const input = e.currentTarget.querySelector('input'); if (input?.value.trim()) navigate(`/search?q=${encodeURIComponent(input.value.trim())}`); }} className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <input type="text" placeholder={t.nav.searchPlaceholder} className="w-64 h-10 pl-10 pr-4 bg-muted rounded-lg border border-border focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all" />
-            </div>
+            </form>
 
             <LanguageSwitcher />
 
