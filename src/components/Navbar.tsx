@@ -138,6 +138,10 @@ const Navbar = () => {
               </div>
               {user ? (
                 <>
+                  <Link to="/go-live" className="text-red-500 py-2 flex items-center gap-1">
+                    <Radio className="w-3.5 h-3.5" />
+                    {t.stream.goLiveNav}
+                  </Link>
                   <Link to="/upload" className="text-muted-foreground py-2">{t.nav.uploadVideo}</Link>
                   <Link to="/notifications" className="text-muted-foreground py-2">{t.nav.notifications}</Link>
                   <Link to="/settings" className="text-muted-foreground py-2">{t.nav.settings}</Link>
