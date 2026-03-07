@@ -18,9 +18,6 @@ import ModeratorPanel from "./pages/ModeratorPanel";
 import Banned from "./pages/Banned";
 import NotFound from "./pages/NotFound";
 import Search from "./pages/Search";
-import GoLive from "./pages/GoLive";
-import LiveStream from "./pages/LiveStream";
-import LiveStreams from "./pages/LiveStreams";
 
 const queryClient = new QueryClient();
 
@@ -51,9 +48,6 @@ const AppRoutes = () => {
       <Route path="/upload" element={<Upload />} />
       <Route path="/moderator" element={<ModeratorPanel />} />
       <Route path="/search" element={<Search />} />
-      <Route path="/go-live" element={<GoLive />} />
-      <Route path="/live" element={<LiveStreams />} />
-      <Route path="/live/:id" element={<LiveStream />} />
       <Route path="/banned" element={<Banned />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
