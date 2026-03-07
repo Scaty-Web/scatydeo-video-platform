@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Play, Search, Menu, X, Bell, User, Settings, LogOut, Upload, Shield, Radio } from "lucide-react";
+import { Play, Search, Menu, X, Bell, User, Settings, LogOut, Upload, Shield } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
@@ -53,10 +53,6 @@ const Navbar = () => {
           <div className="hidden md:flex items-center gap-8">
             <Link to="/" className="text-muted-foreground hover:text-foreground transition-colors">{t.nav.home}</Link>
             <a href="/#videos" className="text-muted-foreground hover:text-foreground transition-colors">{t.nav.videos}</a>
-            <Link to="/live" className="text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1">
-              <Radio className="w-3.5 h-3.5 text-red-500" />
-              {t.stream.liveStreamsNav}
-            </Link>
             <Link to="/rules" className="text-muted-foreground hover:text-foreground transition-colors">{t.nav.rules}</Link>
           </div>
 
@@ -70,11 +66,6 @@ const Navbar = () => {
 
             {user ? (
               <div className="flex items-center gap-2">
-                <Link to="/go-live">
-                  <Button variant="ghost" size="icon" title={t.stream.goLiveNav}>
-                    <Radio className="w-5 h-5 text-red-500" />
-                  </Button>
-                </Link>
                 <Link to="/upload">
                   <Button variant="ghost" size="icon" title={t.nav.uploadVideo}>
                     <Upload className="w-5 h-5" />
@@ -128,20 +119,12 @@ const Navbar = () => {
           <div className="md:hidden py-4 border-t border-border animate-fade-in">
             <div className="flex flex-col gap-4">
               <Link to="/" className="text-foreground py-2">{t.nav.home}</Link>
-              <Link to="/live" className="text-muted-foreground py-2 flex items-center gap-1">
-                <Radio className="w-3.5 h-3.5 text-red-500" />
-                {t.stream.liveStreamsNav}
-              </Link>
               <Link to="/rules" className="text-muted-foreground py-2">{t.nav.rules}</Link>
               <div className="py-2">
                 <LanguageSwitcher />
               </div>
               {user ? (
                 <>
-                  <Link to="/go-live" className="text-red-500 py-2 flex items-center gap-1">
-                    <Radio className="w-3.5 h-3.5" />
-                    {t.stream.goLiveNav}
-                  </Link>
                   <Link to="/upload" className="text-muted-foreground py-2">{t.nav.uploadVideo}</Link>
                   <Link to="/notifications" className="text-muted-foreground py-2">{t.nav.notifications}</Link>
                   <Link to="/settings" className="text-muted-foreground py-2">{t.nav.settings}</Link>
