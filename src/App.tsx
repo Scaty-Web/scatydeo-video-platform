@@ -18,6 +18,8 @@ import ModeratorPanel from "./pages/ModeratorPanel";
 import Banned from "./pages/Banned";
 import NotFound from "./pages/NotFound";
 import Search from "./pages/Search";
+import PlaylistPage from "./pages/Playlist";
+import Playlists from "./pages/Playlists";
 
 const queryClient = new QueryClient();
 
