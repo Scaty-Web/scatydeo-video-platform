@@ -1,9 +1,8 @@
-import { Home, Flame, Clock, ThumbsUp, FolderOpen, Settings, Flag, Upload } from "lucide-react";
+import { Home, Flame, Settings, Flag, Upload } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useLanguage } from "@/hooks/useLanguage";
 import { cn } from "@/lib/utils";
-import { useAuth } from "@/hooks/useAuth";
 
 interface SidebarProps {
   collapsed?: boolean;
