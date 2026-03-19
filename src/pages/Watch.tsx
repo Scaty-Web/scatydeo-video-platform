@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import ReportVideoDialog from "@/components/ReportVideoDialog";
+import AddToPlaylistDialog from "@/components/AddToPlaylistDialog";
 
 interface Video {
   id: string;
