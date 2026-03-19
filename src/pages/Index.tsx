@@ -1,17 +1,26 @@
+import { useState } from "react";
 import Navbar from "@/components/Navbar";
-import Hero from "@/components/Hero";
+import Sidebar from "@/components/Sidebar";
 import VideoGrid from "@/components/VideoGrid";
-import AboutSection from "@/components/AboutSection";
-import Footer from "@/components/Footer";
+import { cn } from "@/lib/utils";
 
 const Index = () => {
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
   return (
     <div className="min-h-screen bg-background">
-      <Navbar />
-      <Hero />
-      <VideoGrid />
-      <AboutSection />
-      <Footer />
+      <Navbar onToggleSidebar={() => setSidebarCollapsed(!sidebarCollapsed)} />
+      <Sidebar collapsed={sidebarCollapsed} />
+      <main
+        className={cn(
+          "pt-14 transition-all duration-200 min-h-screen",
+          sidebarCollapsed ? "ml-[72px]" : "ml-56"
+        )}
+      >
+        <div className="p-6">
+          <VideoGrid />
+        </div>
+      </main>
     </div>
   );
 };

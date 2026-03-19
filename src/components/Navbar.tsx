@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Play, Search, Menu, X, Bell, User, Settings, LogOut, Upload, Shield } from "lucide-react";
+import { Play, Search, Menu, Bell, User, Settings, LogOut, Upload, Shield } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
@@ -15,8 +15,11 @@ import {
 } from "@/components/ui/dropdown-menu";
 import LanguageSwitcher from "./LanguageSwitcher";
 
-const Navbar = () => {
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
+interface NavbarProps {
+  onToggleSidebar?: () => void;
+}
+
+const Navbar = ({ onToggleSidebar }: NavbarProps) => {
   const [isModerator, setIsModerator] = useState(false);
   const { user, signOut } = useAuth();
   const { t } = useLanguage();
@@ -40,105 +43,115 @@ const Navbar = () => {
   };
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border">
-      <div className="container mx-auto px-4">
-        <div className="flex items-center justify-between h-16">
-          <Link to="/" className="flex items-center gap-2">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-glow">
-              <Play className="w-5 h-5 text-primary-foreground fill-current" />
-            </div>
-            <span className="font-display text-xl font-bold glow-text">Scatydeo</span>
-          </Link>
-
-          <div className="hidden md:flex items-center gap-8">
-            <Link to="/" className="text-muted-foreground hover:text-foreground transition-colors">{t.nav.home}</Link>
-            <a href="/#videos" className="text-muted-foreground hover:text-foreground transition-colors">{t.nav.videos}</a>
-            <Link to="/rules" className="text-muted-foreground hover:text-foreground transition-colors">{t.nav.rules}</Link>
-          </div>
-
-          <div className="hidden md:flex items-center gap-4">
-            <form onSubmit={(e) => { e.preventDefault(); const input = e.currentTarget.querySelector('input'); if (input?.value.trim()) navigate(`/search?q=${encodeURIComponent(input.value.trim())}`); }} className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <input type="text" placeholder={t.nav.searchPlaceholder} className="w-64 h-10 pl-10 pr-4 bg-muted rounded-lg border border-border focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all" />
-            </form>
-
-            <LanguageSwitcher />
-
-            {user ? (
-              <div className="flex items-center gap-2">
-                <Link to="/upload">
-                  <Button variant="ghost" size="icon" title={t.nav.uploadVideo}>
-                    <Upload className="w-5 h-5" />
-                  </Button>
-                </Link>
-                <Link to="/notifications">
-                  <Button variant="ghost" size="icon" title={t.nav.notifications}><Bell className="w-5 h-5" /></Button>
-                </Link>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon" className="rounded-full">
-                      <Avatar className="w-8 h-8">
-                        <AvatarImage src={undefined} />
-                        <AvatarFallback><User className="w-4 h-4" /></AvatarFallback>
-                      </Avatar>
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-48">
-                    <DropdownMenuItem onClick={() => navigate("/settings")}>
-                      <User className="w-4 h-4 mr-2" />{t.nav.myProfile}
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => navigate("/settings")}>
-                      <Settings className="w-4 h-4 mr-2" />{t.nav.settings}
-                    </DropdownMenuItem>
-                    {isModerator && (
-                      <>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem onClick={() => navigate("/moderator")}>
-                          <Shield className="w-4 h-4 mr-2" />{t.nav.moderatorPanel}
-                        </DropdownMenuItem>
-                      </>
-                    )}
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={handleSignOut} className="text-red-400">
-                      <LogOut className="w-4 h-4 mr-2" />{t.nav.logout}
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
-            ) : (
-              <Link to="/auth"><Button variant="hero" size="sm">{t.nav.login}</Button></Link>
-            )}
-          </div>
-
-          <button className="md:hidden p-2 text-foreground" onClick={() => setIsMenuOpen(!isMenuOpen)}>
-            {isMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+    <nav className="fixed top-0 left-0 right-0 z-50 bg-background border-b border-border h-14">
+      <div className="flex items-center justify-between h-full px-4">
+        {/* Left: Menu + Logo */}
+        <div className="flex items-center gap-2">
+          <button
+            onClick={onToggleSidebar}
+            className="p-2 rounded-full hover:bg-muted transition-colors"
+          >
+            <Menu className="w-5 h-5 text-foreground" />
           </button>
+          <Link to="/" className="flex items-center gap-1.5">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center">
+              <Play className="w-4 h-4 text-primary-foreground fill-current" />
+            </div>
+            <span className="font-display text-lg font-bold hidden sm:inline">Scatydeo</span>
+          </Link>
         </div>
 
-        {isMenuOpen && (
-          <div className="md:hidden py-4 border-t border-border animate-fade-in">
-            <div className="flex flex-col gap-4">
-              <Link to="/" className="text-foreground py-2">{t.nav.home}</Link>
-              <Link to="/rules" className="text-muted-foreground py-2">{t.nav.rules}</Link>
-              <div className="py-2">
-                <LanguageSwitcher />
-              </div>
-              {user ? (
-                <>
-                  <Link to="/upload" className="text-muted-foreground py-2">{t.nav.uploadVideo}</Link>
-                  <Link to="/notifications" className="text-muted-foreground py-2">{t.nav.notifications}</Link>
-                  <Link to="/settings" className="text-muted-foreground py-2">{t.nav.settings}</Link>
+        {/* Center: Search */}
+        <div className="flex-1 max-w-xl mx-4 hidden sm:block">
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              const input = e.currentTarget.querySelector("input");
+              if (input?.value.trim())
+                navigate(`/search?q=${encodeURIComponent(input.value.trim())}`);
+            }}
+            className="flex"
+          >
+            <input
+              type="text"
+              placeholder={t.nav.searchPlaceholder}
+              className="flex-1 h-10 px-4 bg-background border border-border rounded-l-full focus:border-primary focus:outline-none text-sm"
+            />
+            <button
+              type="submit"
+              className="h-10 px-5 bg-muted border border-l-0 border-border rounded-r-full hover:bg-muted/80 transition-colors"
+            >
+              <Search className="w-5 h-5 text-muted-foreground" />
+            </button>
+          </form>
+        </div>
+
+        {/* Right: Actions */}
+        <div className="flex items-center gap-1">
+          {/* Mobile search */}
+          <button
+            className="sm:hidden p-2 rounded-full hover:bg-muted transition-colors"
+            onClick={() => navigate("/search")}
+          >
+            <Search className="w-5 h-5" />
+          </button>
+
+          <LanguageSwitcher />
+
+          {user ? (
+            <>
+              <Link to="/upload">
+                <Button variant="ghost" size="icon" className="rounded-full" title={t.nav.uploadVideo}>
+                  <Upload className="w-5 h-5" />
+                </Button>
+              </Link>
+              <Link to="/notifications">
+                <Button variant="ghost" size="icon" className="rounded-full" title={t.nav.notifications}>
+                  <Bell className="w-5 h-5" />
+                </Button>
+              </Link>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" className="rounded-full">
+                    <Avatar className="w-8 h-8">
+                      <AvatarImage src={undefined} />
+                      <AvatarFallback className="bg-primary text-primary-foreground text-sm">
+                        <User className="w-4 h-4" />
+                      </AvatarFallback>
+                    </Avatar>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-48">
+                  <DropdownMenuItem onClick={() => navigate("/settings")}>
+                    <User className="w-4 h-4 mr-2" />{t.nav.myProfile}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate("/settings")}>
+                    <Settings className="w-4 h-4 mr-2" />{t.nav.settings}
+                  </DropdownMenuItem>
                   {isModerator && (
-                    <Link to="/moderator" className="text-primary py-2">{t.nav.moderatorPanel}</Link>
+                    <>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem onClick={() => navigate("/moderator")}>
+                        <Shield className="w-4 h-4 mr-2" />{t.nav.moderatorPanel}
+                      </DropdownMenuItem>
+                    </>
                   )}
-                  <Button variant="outline" onClick={handleSignOut}>{t.nav.logout}</Button>
-                </>
-              ) : (
-                <Link to="/auth"><Button variant="hero" className="w-full">{t.nav.login}</Button></Link>
-              )}
-            </div>
-          </div>
-        )}
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleSignOut} className="text-destructive">
+                    <LogOut className="w-4 h-4 mr-2" />{t.nav.logout}
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </>
+          ) : (
+            <Link to="/auth">
+              <Button variant="outline" size="sm" className="gap-2 rounded-full border-primary/50 text-primary hover:bg-primary/10">
+                <User className="w-4 h-4" />
+                {t.nav.login}
+              </Button>
+            </Link>
+          )}
+        </div>
       </div>
     </nav>
   );
