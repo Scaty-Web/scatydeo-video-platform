@@ -21,6 +21,7 @@ const Sidebar = ({ collapsed = false }: SidebarProps) => {
   const userItems = user
     ? [
         { icon: Upload, label: t.nav.uploadVideo, path: "/upload" },
+        { icon: ListVideo, label: t.playlist.myPlaylists, path: "/playlists" },
         { icon: Settings, label: t.nav.settings, path: "/settings" },
       ]
     : [];
