@@ -18,6 +18,8 @@ import ModeratorPanel from "./pages/ModeratorPanel";
 import Banned from "./pages/Banned";
 import NotFound from "./pages/NotFound";
 import Search from "./pages/Search";
+import PlaylistPage from "./pages/Playlist";
+import Playlists from "./pages/Playlists";
 
 const queryClient = new QueryClient();
 
@@ -48,6 +50,8 @@ const AppRoutes = () => {
       <Route path="/upload" element={<Upload />} />
       <Route path="/moderator" element={<ModeratorPanel />} />
       <Route path="/search" element={<Search />} />
+      <Route path="/playlists" element={<Playlists />} />
+      <Route path="/playlist/:id" element={<PlaylistPage />} />
       <Route path="/banned" element={<Banned />} />
       <Route path="*" element={<NotFound />} />
     </Routes>

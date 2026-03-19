@@ -1,4 +1,4 @@
-import { Home, Flame, Settings, Flag, Upload } from "lucide-react";
+import { Home, Flame, Settings, Flag, Upload, ListVideo } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useLanguage } from "@/hooks/useLanguage";
@@ -21,6 +21,7 @@ const Sidebar = ({ collapsed = false }: SidebarProps) => {
   const userItems = user
     ? [
         { icon: Upload, label: t.nav.uploadVideo, path: "/upload" },
+        { icon: ListVideo, label: t.playlist.myPlaylists, path: "/playlists" },
         { icon: Settings, label: t.nav.settings, path: "/settings" },
       ]
     : [];

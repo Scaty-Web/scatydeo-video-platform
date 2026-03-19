@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import ReportVideoDialog from "@/components/ReportVideoDialog";
+import AddToPlaylistDialog from "@/components/AddToPlaylistDialog";
 
 interface Video {
   id: string;
@@ -337,6 +338,7 @@ const Watch = () => {
                   {t.common.share}
                 </Button>
                 <ReportVideoDialog videoId={video.id} videoTitle={video.title} />
+                <AddToPlaylistDialog videoId={video.id} />
               </div>
 
               {/* Channel Info */}
