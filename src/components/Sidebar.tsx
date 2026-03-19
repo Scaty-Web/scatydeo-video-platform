@@ -12,7 +12,7 @@ interface SidebarProps {
 const Sidebar = ({ collapsed = false }: SidebarProps) => {
   const location = useLocation();
   const { user } = useAuth();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
 
   const mainItems = [
     { icon: Home, label: t.nav.home, path: "/" },
