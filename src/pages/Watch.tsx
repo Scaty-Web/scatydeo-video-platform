@@ -338,6 +338,7 @@ const Watch = () => {
                   {t.common.share}
                 </Button>
                 <ReportVideoDialog videoId={video.id} videoTitle={video.title} />
+                <AddToPlaylistDialog videoId={video.id} />
               </div>
 
               {/* Channel Info */}
