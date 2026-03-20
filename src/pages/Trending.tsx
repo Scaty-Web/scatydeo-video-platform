@@ -65,15 +65,15 @@ const Trending = () => {
               {videos.map((video: any) => (
                 <VideoCard
                   key={video.id}
-                  id={video.id}
+                  videoId={video.id}
                   title={video.title}
                   thumbnail={video.thumbnail_url || "/placeholder.svg"}
-                  channelName={video.profiles?.display_name || video.profiles?.username || "Unknown"}
-                  channelAvatar={video.profiles?.avatar_url}
-                  views={video.views_count || 0}
-                  uploadedAt={video.created_at || ""}
+                  author={video.profiles?.display_name || video.profiles?.username || "Unknown"}
+                  authorAvatar={video.profiles?.avatar_url}
+                  authorUsername={video.profiles?.username}
+                  views={String(video.views_count || 0)}
+                  createdAt={video.created_at || ""}
                   duration={video.duration || "0:00"}
-                  channelUsername={video.profiles?.username}
                 />
               ))}
             </div>
