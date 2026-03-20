@@ -3,14 +3,17 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import Navbar from "@/components/Navbar";
 import Sidebar from "@/components/Sidebar";
+import BottomNav from "@/components/BottomNav";
 import VideoCard from "@/components/VideoCard";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/hooks/useLanguage";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { Flame } from "lucide-react";
 
 const Trending = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const { language } = useLanguage();
+  const isMobile = useIsMobile();
 
   const { data: videos, isLoading } = useQuery({
     queryKey: ["trending-videos"],
@@ -30,14 +33,14 @@ const Trending = () => {
   return (
     <div className="min-h-screen bg-background">
       <Navbar onToggleSidebar={() => setSidebarCollapsed(!sidebarCollapsed)} />
-      <Sidebar collapsed={sidebarCollapsed} />
+      {!isMobile && <Sidebar collapsed={sidebarCollapsed} />}
       <main
         className={cn(
           "pt-14 transition-all duration-200 min-h-screen",
-          sidebarCollapsed ? "ml-[72px]" : "ml-56"
+          isMobile ? "ml-0 pb-16" : sidebarCollapsed ? "ml-[72px]" : "ml-56"
         )}
       >
-        <div className="p-6">
+        <div className="p-4 md:p-6">
           <div className="flex items-center gap-3 mb-6">
             <Flame className="w-6 h-6 text-destructive" />
             <h1 className="text-2xl font-bold text-foreground">
@@ -94,6 +97,7 @@ const Trending = () => {
           )}
         </div>
       </main>
+      {isMobile && <BottomNav />}
     </div>
   );
 };
