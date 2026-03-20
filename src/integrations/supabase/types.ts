@@ -268,6 +268,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "stream_chat_messages_stream_id_fkey"
+            columns: ["stream_id"]
+            isOneToOne: false
+            referencedRelation: "streams_public"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "stream_chat_messages_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
@@ -530,7 +537,62 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      streams_public: {
+        Row: {
+          chat_enabled: boolean | null
+          created_at: string | null
+          description: string | null
+          ended_at: string | null
+          id: string | null
+          is_live: boolean | null
+          playback_url: string | null
+          started_at: string | null
+          thumbnail_url: string | null
+          title: string | null
+          updated_at: string | null
+          user_id: string | null
+          viewer_count: number | null
+        }
+        Insert: {
+          chat_enabled?: boolean | null
+          created_at?: string | null
+          description?: string | null
+          ended_at?: string | null
+          id?: string | null
+          is_live?: boolean | null
+          playback_url?: string | null
+          started_at?: string | null
+          thumbnail_url?: string | null
+          title?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+          viewer_count?: number | null
+        }
+        Update: {
+          chat_enabled?: boolean | null
+          created_at?: string | null
+          description?: string | null
+          ended_at?: string | null
+          id?: string | null
+          is_live?: boolean | null
+          playback_url?: string | null
+          started_at?: string | null
+          thumbnail_url?: string | null
+          title?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+          viewer_count?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "streams_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       can_view_video_comments: {
