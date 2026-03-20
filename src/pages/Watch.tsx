@@ -97,11 +97,12 @@ const Watch = () => {
 
     if (!error && data) {
       setVideo(data as unknown as Video);
-      // Increment view count
-      await supabase
-        .from("videos")
-        .update({ views_count: (data.views_count || 0) + 1 })
-        .eq("id", id);
+      // Increment view count with session deduplication
+      const viewedKey = `viewed_${id}`;
+      if (!sessionStorage.getItem(viewedKey)) {
+        await supabase.rpc('increment_view_count', { target_video_id: id });
+        sessionStorage.setItem(viewedKey, 'true');
+      }
     }
     setLoading(false);
   };
