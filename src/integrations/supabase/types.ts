@@ -576,6 +576,10 @@ export type Database = {
         Args: { target_video_id: string }
         Returns: boolean
       }
+      increment_view_count: {
+        Args: { target_video_id: string }
+        Returns: undefined
+      }
       is_user_banned: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
