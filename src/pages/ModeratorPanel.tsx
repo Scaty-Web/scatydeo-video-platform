@@ -95,7 +95,7 @@ const ModeratorPanel = () => {
   const checkModeratorStatus = async () => {
     if (!user) return;
     
-    // First check by role in user_roles table
+    // Check moderator status via server-side has_role function only
     const { data: roleData } = await supabase
       .rpc('has_role', { _user_id: user.id, _role: 'moderator' });
     
@@ -103,25 +103,6 @@ const ModeratorPanel = () => {
       setIsModerator(true);
       fetchReports();
       fetchBannedUsers();
-    } else {
-      // Check by username for initial moderator setup
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('username')
-        .eq('id', user.id)
-        .single();
-      
-      if (profile?.username === 'lattesiber') {
-        // Add moderator role if not exists
-        await supabase.from('user_roles').upsert({
-          user_id: user.id,
-          role: 'moderator'
-        }, { onConflict: 'user_id,role' });
-        
-        setIsModerator(true);
-        fetchReports();
-        fetchBannedUsers();
-      }
     }
     
     setLoading(false);

@@ -97,11 +97,12 @@ const Watch = () => {
 
     if (!error && data) {
       setVideo(data as unknown as Video);
-      // Increment view count
-      await supabase
-        .from("videos")
-        .update({ views_count: (data.views_count || 0) + 1 })
-        .eq("id", id);
+      // Increment view count with session deduplication
+      const viewedKey = `viewed_${id}`;
+      if (!sessionStorage.getItem(viewedKey)) {
+        await supabase.rpc('increment_view_count', { target_video_id: id });
+        sessionStorage.setItem(viewedKey, 'true');
+      }
     }
     setLoading(false);
   };
@@ -201,8 +202,9 @@ const Watch = () => {
         .eq("video_id", id)
         .eq("user_id", user.id);
       setLiked(false);
+      // Trigger handles likes_count; refresh from server
       if (video) {
-        setVideo({ ...video, likes_count: video.likes_count - 1 });
+        setVideo({ ...video, likes_count: Math.max(video.likes_count - 1, 0) });
       }
     } else {
       await supabase
