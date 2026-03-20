@@ -28,6 +28,7 @@ const Sidebar = ({ collapsed = false }: SidebarProps) => {
 
   const otherItems = [
     { icon: Flag, label: t.nav.rules, path: "/rules" },
+    { icon: Info, label: language === "tr" ? "Hakkında" : "About", path: "/about" },
   ];
 
   const renderItem = (item: { icon: any; label: string; path: string }, index: number) => {
