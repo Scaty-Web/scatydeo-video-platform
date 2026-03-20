@@ -20,6 +20,7 @@ import NotFound from "./pages/NotFound";
 import Search from "./pages/Search";
 import PlaylistPage from "./pages/Playlist";
 import Playlists from "./pages/Playlists";
+import Trending from "./pages/Trending";
 
 const queryClient = new QueryClient();
 
