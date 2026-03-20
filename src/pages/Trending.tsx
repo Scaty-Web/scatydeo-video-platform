@@ -97,6 +97,7 @@ const Trending = () => {
           )}
         </div>
       </main>
+      {isMobile && <BottomNav />}
     </div>
   );
 };
