@@ -202,8 +202,9 @@ const Watch = () => {
         .eq("video_id", id)
         .eq("user_id", user.id);
       setLiked(false);
+      // Trigger handles likes_count; refresh from server
       if (video) {
-        setVideo({ ...video, likes_count: video.likes_count - 1 });
+        setVideo({ ...video, likes_count: Math.max(video.likes_count - 1, 0) });
       }
     } else {
       await supabase
