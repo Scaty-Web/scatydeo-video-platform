@@ -1,4 +1,4 @@
-import { Home, Flame, Flag, ListVideo, Settings } from "lucide-react";
+import { Home, Flame, Flag, ListVideo, Settings, Info } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useLanguage } from "@/hooks/useLanguage";
@@ -13,6 +13,7 @@ const BottomNav = () => {
     { icon: Home, label: language === "tr" ? "Ana Sayfa" : "Home", path: "/" },
     { icon: Flame, label: language === "tr" ? "Trendler" : "Trending", path: "/trending" },
     { icon: Flag, label: language === "tr" ? "Kurallar" : "Rules", path: "/rules" },
+    { icon: Info, label: language === "tr" ? "Hakkında" : "About", path: "/about" },
     ...(user
       ? [
           { icon: ListVideo, label: language === "tr" ? "Listeler" : "Playlists", path: "/playlists" },

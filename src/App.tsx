@@ -21,6 +21,7 @@ import Search from "./pages/Search";
 import PlaylistPage from "./pages/Playlist";
 import Playlists from "./pages/Playlists";
 import Trending from "./pages/Trending";
+import About from "./pages/About";
 
 const queryClient = new QueryClient();
 
@@ -54,6 +55,7 @@ const AppRoutes = () => {
       <Route path="/search" element={<Search />} />
       <Route path="/playlists" element={<Playlists />} />
       <Route path="/playlist/:id" element={<PlaylistPage />} />
+      <Route path="/about" element={<About />} />
       <Route path="/banned" element={<Banned />} />
       <Route path="*" element={<NotFound />} />
     </Routes>

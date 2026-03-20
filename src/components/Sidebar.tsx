@@ -1,4 +1,4 @@
-import { Home, Flame, Settings, Flag, Upload, ListVideo } from "lucide-react";
+import { Home, Flame, Settings, Flag, Upload, ListVideo, Info } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useLanguage } from "@/hooks/useLanguage";
@@ -28,6 +28,7 @@ const Sidebar = ({ collapsed = false }: SidebarProps) => {
 
   const otherItems = [
     { icon: Flag, label: t.nav.rules, path: "/rules" },
+    { icon: Info, label: language === "tr" ? "Hakkında" : "About", path: "/about" },
   ];
 
   const renderItem = (item: { icon: any; label: string; path: string }, index: number) => {
