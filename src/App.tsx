@@ -42,6 +42,7 @@ const AppRoutes = () => {
   return (
     <Routes>
       <Route path="/" element={<Index />} />
+      <Route path="/trending" element={<Trending />} />
       <Route path="/auth" element={<Auth />} />
       <Route path="/watch/:id" element={<Watch />} />
       <Route path="/channel/:username" element={<Channel />} />
