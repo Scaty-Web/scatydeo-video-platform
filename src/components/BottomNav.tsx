@@ -1,4 +1,4 @@
-import { Home, Flame, Flag, ListVideo, Settings } from "lucide-react";
+import { Home, Flame, Flag, ListVideo, Settings, Info } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useLanguage } from "@/hooks/useLanguage";
