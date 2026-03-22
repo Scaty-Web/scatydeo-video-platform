@@ -180,6 +180,17 @@ export const translations = {
       privacySecurity: "Gizlilik ve Güvenlik",
       privacyComingSoon: "Gizlilik ayarları yakında eklenecek.",
       dangerZone: "Tehlikeli Bölge",
+      passwordReset: "Şifre Sıfırla",
+      passwordResetInfo: "Eğer kendinizi güvenli olmadığınızı düşünüyorsanız şifrenizi sıfırlayabilirsiniz.",
+      currentPassword: "Mevcut Şifre",
+      newPassword: "Yeni Şifre",
+      confirmNewPassword: "Yeni Şifre (Tekrar)",
+      resetPassword: "Şifreyi Sıfırla",
+      resettingPassword: "Sıfırlanıyor...",
+      passwordUpdated: "Şifreniz başarıyla güncellendi.",
+      passwordMismatch: "Yeni şifreler eşleşmiyor.",
+      passwordTooShort: "Şifre en az 6 karakter olmalıdır.",
+      currentPasswordWrong: "Mevcut şifreniz yanlış.",
     },
     // Upload Page
     upload: {
