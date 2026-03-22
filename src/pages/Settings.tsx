@@ -223,24 +223,7 @@ const Settings = () => {
             </TabsContent>
 
             <TabsContent value="privacy">
-              <div className="glass-card p-6 rounded-xl space-y-6">
-                <h3 className="font-bold text-lg">{t.settings.privacySecurity}</h3>
-                <p className="text-muted-foreground">
-                  {t.settings.privacyComingSoon}
-                </p>
-
-                <div className="pt-6 border-t border-primary/20">
-                  <h4 className="font-semibold text-red-400 mb-2">{t.settings.dangerZone}</h4>
-                  <Button
-                    variant="outline"
-                    className="border-red-500/50 text-red-400 hover:bg-red-500/10"
-                    onClick={handleSignOut}
-                  >
-                    <LogOut className="w-4 h-4 mr-2" />
-                    {t.common.signOut}
-                  </Button>
-                </div>
-              </div>
+              <PrivacyTab t={t} user={user} signOut={handleSignOut} />
             </TabsContent>
           </Tabs>
         </div>
