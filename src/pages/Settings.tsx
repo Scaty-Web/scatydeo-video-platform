@@ -234,4 +234,121 @@ const Settings = () => {
   );
 };
 
+const PrivacyTab = ({ t, user, signOut }: { t: any; user: any; signOut: () => void }) => {
+  const { toast } = useToast();
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [resetting, setResetting] = useState(false);
+
+  const handlePasswordReset = async () => {
+    if (newPassword.length < 6) {
+      toast({ title: t.common.error, description: t.settings.passwordTooShort, variant: "destructive" });
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      toast({ title: t.common.error, description: t.settings.passwordMismatch, variant: "destructive" });
+      return;
+    }
+
+    setResetting(true);
+
+    // Verify current password by re-signing in
+    const { error: signInError } = await supabase.auth.signInWithPassword({
+      email: user.email!,
+      password: currentPassword,
+    });
+
+    if (signInError) {
+      toast({ title: t.common.error, description: t.settings.currentPasswordWrong, variant: "destructive" });
+      setResetting(false);
+      return;
+    }
+
+    const { error } = await supabase.auth.updateUser({ password: newPassword });
+
+    if (error) {
+      toast({ title: t.common.error, description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: t.common.success, description: t.settings.passwordUpdated });
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+    }
+
+    setResetting(false);
+  };
+
+  return (
+    <div className="glass-card p-6 rounded-xl space-y-6">
+      <h3 className="font-bold text-lg flex items-center gap-2">
+        <Shield className="w-5 h-5" />
+        {t.settings.privacySecurity}
+      </h3>
+
+      {/* Password Reset */}
+      <div className="space-y-4">
+        <h4 className="font-semibold flex items-center gap-2">
+          <KeyRound className="w-4 h-4" />
+          {t.settings.passwordReset}
+        </h4>
+        <div className="flex items-start gap-2 p-3 rounded-lg bg-muted/30 border border-primary/10">
+          <AlertTriangle className="w-4 h-4 text-muted-foreground mt-0.5 shrink-0" />
+          <p className="text-sm text-muted-foreground">{t.settings.passwordResetInfo}</p>
+        </div>
+
+        <div className="space-y-3">
+          <div className="space-y-2">
+            <Label htmlFor="currentPassword">{t.settings.currentPassword}</Label>
+            <Input
+              id="currentPassword"
+              type="password"
+              value={currentPassword}
+              onChange={(e) => setCurrentPassword(e.target.value)}
+              className="bg-background/50 border-primary/30"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="newPassword">{t.settings.newPassword}</Label>
+            <Input
+              id="newPassword"
+              type="password"
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              className="bg-background/50 border-primary/30"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="confirmPassword">{t.settings.confirmNewPassword}</Label>
+            <Input
+              id="confirmPassword"
+              type="password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              className="bg-background/50 border-primary/30"
+            />
+          </div>
+          <Button variant="hero" onClick={handlePasswordReset} disabled={resetting || !currentPassword || !newPassword || !confirmPassword}>
+            <KeyRound className="w-4 h-4 mr-2" />
+            {resetting ? t.settings.resettingPassword : t.settings.resetPassword}
+          </Button>
+        </div>
+      </div>
+
+      {/* Danger Zone */}
+      <div className="pt-6 border-t border-primary/20">
+        <h4 className="font-semibold text-destructive mb-2">{t.settings.dangerZone}</h4>
+        <Button
+          variant="outline"
+          className="border-destructive/50 text-destructive hover:bg-destructive/10"
+          onClick={signOut}
+        >
+          <LogOut className="w-4 h-4 mr-2" />
+          {t.common.signOut}
+        </Button>
+      </div>
+    </div>
+  );
+};
+
 export default Settings;
