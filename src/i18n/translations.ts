@@ -609,6 +609,17 @@ export const translations = {
       privacySecurity: "Privacy & Security",
       privacyComingSoon: "Privacy settings coming soon.",
       dangerZone: "Danger Zone",
+      passwordReset: "Reset Password",
+      passwordResetInfo: "If you feel your account is not secure, you can reset your password.",
+      currentPassword: "Current Password",
+      newPassword: "New Password",
+      confirmNewPassword: "Confirm New Password",
+      resetPassword: "Reset Password",
+      resettingPassword: "Resetting...",
+      passwordUpdated: "Your password has been updated successfully.",
+      passwordMismatch: "New passwords do not match.",
+      passwordTooShort: "Password must be at least 6 characters.",
+      currentPasswordWrong: "Your current password is incorrect.",
     },
     // Upload Page
     upload: {
