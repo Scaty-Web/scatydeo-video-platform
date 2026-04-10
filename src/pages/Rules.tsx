@@ -1,10 +1,11 @@
 import { useLanguage } from "@/hooks/useLanguage";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import { Shield, AlertTriangle, CheckCircle, XCircle, Scale } from "lucide-react";
+import { Shield, AlertTriangle, CheckCircle, XCircle, Scale, ExternalLink } from "lucide-react";
+import { Link } from "react-router-dom";
 
 const Rules = () => {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
 
   return (
     <div className="min-h-screen bg-background">
@@ -74,7 +75,7 @@ const Rules = () => {
               </div>
             </div>
 
-            {/* Terms */}
+            {/* Terms & Legal Links */}
             <div className="glass-card p-6 rounded-xl">
               <div className="flex items-center gap-3 mb-4">
                 <Scale className="w-6 h-6 text-primary" />
@@ -87,6 +88,25 @@ const Rules = () => {
                     <li key={index}>• {item}</li>
                   ))}
                 </ul>
+
+                <div className="flex flex-wrap gap-4 mt-6 pt-4 border-t border-border">
+                  <a
+                    href="https://scaty-web.github.io/tos.html"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
+                  >
+                    <ExternalLink className="w-4 h-4" />
+                    {language === "tr" ? "Kullanım Şartları" : "Terms of Service"}
+                  </a>
+                  <Link
+                    to="/privacy"
+                    className="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
+                  >
+                    <Shield className="w-4 h-4" />
+                    {language === "tr" ? "Gizlilik Politikası" : "Privacy Policy"}
+                  </Link>
+                </div>
               </div>
             </div>
 

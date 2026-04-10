@@ -1,8 +1,9 @@
 import { Play, Heart } from "lucide-react";
+import { Link } from "react-router-dom";
 import { useLanguage } from "@/hooks/useLanguage";
 
 const Footer = () => {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
 
   return (
     <footer className="bg-card border-t border-border">
@@ -25,9 +26,9 @@ const Footer = () => {
           <div>
             <h4 className="font-display font-semibold mb-4">{t.footer.platform}</h4>
             <ul className="space-y-2 text-muted-foreground">
-              <li><a href="#" className="hover:text-primary transition-colors">{t.footer.home}</a></li>
-              <li><a href="#videos" className="hover:text-primary transition-colors">{t.footer.videos}</a></li>
-              <li><a href="#about" className="hover:text-primary transition-colors">{t.footer.about}</a></li>
+              <li><Link to="/" className="hover:text-primary transition-colors">{t.footer.home}</Link></li>
+              <li><Link to="/trending" className="hover:text-primary transition-colors">{language === "tr" ? "Trendler" : "Trending"}</Link></li>
+              <li><Link to="/about" className="hover:text-primary transition-colors">{t.footer.about}</Link></li>
               <li><a href="mailto:a8112146@gmail.com" className="hover:text-primary transition-colors">{t.footer.contact}</a></li>
             </ul>
           </div>
@@ -36,8 +37,16 @@ const Footer = () => {
           <div>
             <h4 className="font-display font-semibold mb-4">{t.footer.legal}</h4>
             <ul className="space-y-2 text-muted-foreground">
-              <li><a href="#" className="hover:text-primary transition-colors">{t.footer.terms}</a></li>
-              <li><a href="#" className="hover:text-primary transition-colors">{t.footer.privacy}</a></li>
+              <li>
+                <a href="https://scaty-web.github.io/tos.html" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">
+                  {t.footer.terms}
+                </a>
+              </li>
+              <li>
+                <Link to="/privacy" className="hover:text-primary transition-colors">
+                  {t.footer.privacy}
+                </Link>
+              </li>
               <li><a href="#" className="hover:text-primary transition-colors">{t.footer.cookies}</a></li>
               <li><a href="#" className="hover:text-primary transition-colors">{t.footer.kvkk}</a></li>
             </ul>
@@ -50,7 +59,7 @@ const Footer = () => {
         {/* Bottom */}
         <div className="pt-8 flex flex-col md:flex-row items-center justify-between gap-4">
           <p className="text-muted-foreground text-sm">
-            ©2026 Scaty Web ORG. {t.footer.copyright}
+            ©2026 SWO {language === "tr" ? "Tüm Hakları Saklıdır" : "All Rights Reserved"}
           </p>
           <p className="text-muted-foreground text-sm flex items-center gap-1">
             <Heart className="w-4 h-4 text-primary" /> {t.footer.madeWith}

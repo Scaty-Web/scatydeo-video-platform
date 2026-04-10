@@ -16,7 +16,12 @@ import {
   Eye, 
   Calendar,
   User,
-  AlertTriangle
+  AlertTriangle,
+  Flame,
+  Sparkles,
+  Shield,
+  ExternalLink,
+  Loader2
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import ReportVideoDialog from "@/components/ReportVideoDialog";
@@ -52,6 +57,17 @@ interface Comment {
   };
 }
 
+interface TrendingVideo {
+  id: string;
+  title: string;
+  thumbnail_url: string | null;
+  views_count: number | null;
+  profiles: {
+    username: string;
+    display_name: string;
+  };
+}
+
 const Watch = () => {
   const { id } = useParams();
   const { user } = useAuth();
@@ -63,11 +79,15 @@ const Watch = () => {
   const [loading, setLoading] = useState(true);
   const [liked, setLiked] = useState(false);
   const [subscribed, setSubscribed] = useState(false);
+  const [trendingVideos, setTrendingVideos] = useState<TrendingVideo[]>([]);
+  const [aiSummary, setAiSummary] = useState("");
+  const [summaryLoading, setSummaryLoading] = useState(false);
 
   useEffect(() => {
     if (id) {
       fetchVideo();
       fetchComments();
+      fetchTrending();
       if (user) {
         checkIfLiked();
       }
@@ -79,6 +99,20 @@ const Watch = () => {
       checkIfSubscribed();
     }
   }, [user, video]);
+
+  const fetchTrending = async () => {
+    const { data } = await supabase
+      .from("videos")
+      .select(`id, title, thumbnail_url, views_count, profiles:user_id (username, display_name)`)
+      .eq("is_public", true)
+      .gte("views_count", 10)
+      .order("views_count", { ascending: false })
+      .limit(8);
+    
+    if (data) {
+      setTrendingVideos(data as unknown as TrendingVideo[]);
+    }
+  };
 
   const fetchVideo = async () => {
     const { data, error } = await supabase
@@ -97,7 +131,6 @@ const Watch = () => {
 
     if (!error && data) {
       setVideo(data as unknown as Video);
-      // Increment view count with session deduplication
       const viewedKey = `viewed_${id}`;
       if (!sessionStorage.getItem(viewedKey)) {
         await supabase.rpc('increment_view_count', { target_video_id: id });
@@ -152,98 +185,83 @@ const Watch = () => {
 
   const handleSubscribe = async () => {
     if (!user) {
-      toast({
-        title: t.common.signIn,
-        description: t.watch.signInToSubscribe,
-        variant: "destructive",
-      });
+      toast({ title: t.common.signIn, description: t.watch.signInToSubscribe, variant: "destructive" });
       return;
     }
-
     if (!video) return;
 
     if (subscribed) {
-      await supabase
-        .from("subscriptions")
-        .delete()
-        .eq("channel_id", video.user_id)
-        .eq("subscriber_id", user.id);
+      await supabase.from("subscriptions").delete().eq("channel_id", video.user_id).eq("subscriber_id", user.id);
       setSubscribed(false);
-      toast({
-        title: t.watch.subscriptionCancelled,
-        description: t.watch.notFollowingChannel,
-      });
+      toast({ title: t.watch.subscriptionCancelled, description: t.watch.notFollowingChannel });
     } else {
-      await supabase
-        .from("subscriptions")
-        .insert({ channel_id: video.user_id, subscriber_id: user.id });
+      await supabase.from("subscriptions").insert({ channel_id: video.user_id, subscriber_id: user.id });
       setSubscribed(true);
-      toast({
-        title: t.watch.subscribedSuccess,
-        description: t.watch.followingChannel,
-      });
+      toast({ title: t.watch.subscribedSuccess, description: t.watch.followingChannel });
     }
   };
 
   const handleLike = async () => {
     if (!user) {
-      toast({
-        title: t.common.signIn,
-        description: t.watch.signInToLike,
-        variant: "destructive",
-      });
+      toast({ title: t.common.signIn, description: t.watch.signInToLike, variant: "destructive" });
       return;
     }
 
     if (liked) {
-      await supabase
-        .from("video_likes")
-        .delete()
-        .eq("video_id", id)
-        .eq("user_id", user.id);
+      await supabase.from("video_likes").delete().eq("video_id", id).eq("user_id", user.id);
       setLiked(false);
-      // Trigger handles likes_count; refresh from server
-      if (video) {
-        setVideo({ ...video, likes_count: Math.max(video.likes_count - 1, 0) });
-      }
+      if (video) setVideo({ ...video, likes_count: Math.max(video.likes_count - 1, 0) });
     } else {
-      await supabase
-        .from("video_likes")
-        .insert({ video_id: id, user_id: user.id });
+      await supabase.from("video_likes").insert({ video_id: id, user_id: user.id });
       setLiked(true);
-      if (video) {
-        setVideo({ ...video, likes_count: video.likes_count + 1 });
-      }
+      if (video) setVideo({ ...video, likes_count: video.likes_count + 1 });
     }
   };
 
   const handleComment = async () => {
     if (!user) {
-      toast({
-        title: t.common.signIn,
-        description: t.watch.signInToComment,
-        variant: "destructive",
-      });
+      toast({ title: t.common.signIn, description: t.watch.signInToComment, variant: "destructive" });
       return;
     }
-
     if (!newComment.trim()) return;
 
-    const { error } = await supabase
-      .from("comments")
-      .insert({
-        video_id: id,
-        user_id: user.id,
-        content: newComment.trim(),
-      });
+    const { error } = await supabase.from("comments").insert({
+      video_id: id,
+      user_id: user.id,
+      content: newComment.trim(),
+    });
 
     if (!error) {
       setNewComment("");
       fetchComments();
-      toast({
-        title: t.watch.commentAdded,
-        description: t.watch.commentAddedDesc,
+      toast({ title: t.watch.commentAdded, description: t.watch.commentAddedDesc });
+    }
+  };
+
+  const handleSummarize = async () => {
+    if (!video) return;
+    setSummaryLoading(true);
+    setAiSummary("");
+
+    try {
+      const { data, error } = await supabase.functions.invoke("summarize-video", {
+        body: {
+          title: video.title,
+          description: video.description,
+          comments: comments.slice(0, 5).map(c => c.content),
+        },
       });
+
+      if (error) throw error;
+      setAiSummary(data.summary);
+    } catch (err: any) {
+      toast({
+        title: language === "tr" ? "Özet oluşturulamadı" : "Could not generate summary",
+        description: err.message || "Error",
+        variant: "destructive",
+      });
+    } finally {
+      setSummaryLoading(false);
     }
   };
 
@@ -274,12 +292,8 @@ const Watch = () => {
         <div className="container mx-auto px-4 py-20 text-center">
           <AlertTriangle className="w-16 h-16 text-primary mx-auto mb-4" />
           <h1 className="text-2xl font-bold mb-2">{t.watch.videoNotFound}</h1>
-          <p className="text-muted-foreground mb-6">
-            {t.watch.videoNotFoundDesc}
-          </p>
-          <Link to="/">
-            <Button variant="hero">{t.common.goHome}</Button>
-          </Link>
+          <p className="text-muted-foreground mb-6">{t.watch.videoNotFoundDesc}</p>
+          <Link to="/"><Button variant="hero">{t.common.goHome}</Button></Link>
         </div>
         <Footer />
       </div>
@@ -292,7 +306,7 @@ const Watch = () => {
       
       <main className="container mx-auto px-4 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Video Player */}
+          {/* Left: Video + Info + Comments */}
           <div className="lg:col-span-2 space-y-6">
             {/* Video */}
             <div className="aspect-video">
@@ -325,7 +339,7 @@ const Watch = () => {
               </div>
 
               {/* Actions */}
-              <div className="flex items-center gap-4">
+              <div className="flex flex-wrap items-center gap-3">
                 <Button
                   variant={liked ? "hero" : "outline"}
                   size="sm"
@@ -339,9 +353,30 @@ const Watch = () => {
                   <Share2 className="w-4 h-4" />
                   {t.common.share}
                 </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-2"
+                  onClick={handleSummarize}
+                  disabled={summaryLoading}
+                >
+                  {summaryLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+                  {language === "tr" ? "AI Özet" : "AI Summary"}
+                </Button>
                 <ReportVideoDialog videoId={video.id} videoTitle={video.title} />
                 <AddToPlaylistDialog videoId={video.id} />
               </div>
+
+              {/* AI Summary */}
+              {aiSummary && (
+                <div className="p-4 bg-primary/5 border border-primary/20 rounded-xl">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Sparkles className="w-4 h-4 text-primary" />
+                    <span className="font-semibold text-sm">{language === "tr" ? "AI Özet (Gemini)" : "AI Summary (Gemini)"}</span>
+                  </div>
+                  <p className="text-muted-foreground text-sm">{aiSummary}</p>
+                </div>
+              )}
 
               {/* Channel Info */}
               <div className="flex items-center justify-between p-4 bg-muted/30 rounded-xl">
@@ -351,9 +386,7 @@ const Watch = () => {
                 >
                   <Avatar className="w-12 h-12 border-2 border-primary/30">
                     <AvatarImage src={video.profiles.avatar_url || undefined} />
-                    <AvatarFallback>
-                      <User className="w-6 h-6" />
-                    </AvatarFallback>
+                    <AvatarFallback><User className="w-6 h-6" /></AvatarFallback>
                   </Avatar>
                   <div>
                     <p className="font-semibold">{video.profiles.display_name}</p>
@@ -388,7 +421,6 @@ const Watch = () => {
                 {comments.length} {t.common.comments}
               </h2>
 
-              {/* Add Comment */}
               <div className="space-y-3">
                 <Textarea
                   placeholder={user ? t.watch.addComment : t.watch.addCommentSignIn}
@@ -409,20 +441,15 @@ const Watch = () => {
                 </div>
               </div>
 
-              {/* Comments List */}
               <div className="space-y-4">
                 {comments.length === 0 ? (
-                  <p className="text-center text-muted-foreground py-8">
-                    {t.watch.noComments}
-                  </p>
+                  <p className="text-center text-muted-foreground py-8">{t.watch.noComments}</p>
                 ) : (
                   comments.map((comment) => (
                     <div key={comment.id} className="flex gap-3">
                       <Avatar className="w-10 h-10">
                         <AvatarImage src={comment.profiles.avatar_url || undefined} />
-                        <AvatarFallback>
-                          <User className="w-4 h-4" />
-                        </AvatarFallback>
+                        <AvatarFallback><User className="w-4 h-4" /></AvatarFallback>
                       </Avatar>
                       <div className="flex-1">
                         <div className="flex items-center gap-2">
@@ -432,9 +459,7 @@ const Watch = () => {
                           >
                             {comment.profiles.display_name}
                           </Link>
-                          <span className="text-sm text-muted-foreground">
-                            {formatDate(comment.created_at)}
-                          </span>
+                          <span className="text-sm text-muted-foreground">{formatDate(comment.created_at)}</span>
                         </div>
                         <p className="mt-1">{comment.content}</p>
                       </div>
@@ -445,11 +470,71 @@ const Watch = () => {
             </div>
           </div>
 
-          {/* Sidebar - Related Videos */}
-          <div className="space-y-4">
-            <h3 className="font-bold text-lg">{t.watch.suggestedVideos}</h3>
-            <div className="text-center py-8 text-muted-foreground">
-              <p>{t.watch.comingSoon}</p>
+          {/* Right Sidebar: Trending + Legal */}
+          <div className="space-y-6">
+            {/* Trending */}
+            <div>
+              <h3 className="font-bold text-lg flex items-center gap-2 mb-4">
+                <Flame className="w-5 h-5 text-orange-500" />
+                {language === "tr" ? "Trendler" : "Trending"}
+              </h3>
+              {trendingVideos.length === 0 ? (
+                <p className="text-center text-muted-foreground py-4 text-sm">
+                  {language === "tr" ? "Henüz trend video yok" : "No trending videos yet"}
+                </p>
+              ) : (
+                <div className="space-y-3">
+                  {trendingVideos.map((v) => (
+                    <Link
+                      key={v.id}
+                      to={`/watch/${v.id}`}
+                      className="flex gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors"
+                    >
+                      <div className="w-40 aspect-video rounded-lg overflow-hidden bg-muted flex-shrink-0">
+                        {v.thumbnail_url ? (
+                          <img src={v.thumbnail_url} alt={v.title} className="w-full h-full object-cover" />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center">
+                            <Eye className="w-4 h-4 text-muted-foreground" />
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-sm line-clamp-2">{v.title}</p>
+                        <p className="text-xs text-muted-foreground mt-1">{v.profiles.display_name}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {(v.views_count || 0).toLocaleString()} {t.common.views}
+                        </p>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Legal Links */}
+            <div className="glass-card p-4 rounded-xl space-y-3">
+              <Link
+                to="/privacy"
+                className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors"
+              >
+                <Shield className="w-4 h-4" />
+                {language === "tr" ? "Gizlilik Politikası" : "Privacy Policy"}
+              </Link>
+              <a
+                href="https://scaty-web.github.io/tos.html"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors"
+              >
+                <ExternalLink className="w-4 h-4" />
+                {language === "tr" ? "Kullanım Şartları" : "Terms of Service"}
+              </a>
+              <div className="pt-2 border-t border-border">
+                <p className="text-xs text-muted-foreground">
+                  ©2026 SWO {language === "tr" ? "Tüm Hakları Saklıdır" : "All Rights Reserved"}
+                </p>
+              </div>
             </div>
           </div>
         </div>
