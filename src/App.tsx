@@ -22,6 +22,7 @@ import PlaylistPage from "./pages/Playlist";
 import Playlists from "./pages/Playlists";
 import Trending from "./pages/Trending";
 import About from "./pages/About";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
 
 const queryClient = new QueryClient();
 
