@@ -26,6 +26,7 @@ const Index = () => {
         </div>
       </main>
       {isMobile && <BottomNav />}
+      <WelcomeV2Modal />
     </div>
   );
 };
