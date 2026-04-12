@@ -14,45 +14,47 @@ const features = [
   { icon: Music, titleTr: "Canlı Yayın", titleEn: "Live Streaming", descTr: "Canlı yayın desteği", descEn: "Live streaming support" },
 ];
 
-// Simple melody generator using Web Audio API
+// Ambient 3-second pad using Web Audio API
 const playWelcomeMusic = (audioCtxRef: React.MutableRefObject<AudioContext | null>) => {
   try {
     const ctx = new AudioContext();
     audioCtxRef.current = ctx;
-    const gainNode = ctx.createGain();
-    gainNode.gain.value = 0.15;
-    gainNode.connect(ctx.destination);
+    const master = ctx.createGain();
+    master.gain.value = 0.18;
+    master.connect(ctx.destination);
 
-    // A pleasant welcome melody
-    const notes = [
-      { freq: 523.25, start: 0, dur: 0.3 },    // C5
-      { freq: 659.25, start: 0.3, dur: 0.3 },   // E5
-      { freq: 783.99, start: 0.6, dur: 0.3 },   // G5
-      { freq: 1046.50, start: 0.9, dur: 0.6 },  // C6
-      { freq: 783.99, start: 1.5, dur: 0.3 },   // G5
-      { freq: 880.00, start: 1.8, dur: 0.3 },   // A5
-      { freq: 1046.50, start: 2.1, dur: 0.9 },  // C6
-      { freq: 987.77, start: 3.0, dur: 0.3 },   // B5
-      { freq: 880.00, start: 3.3, dur: 0.3 },   // A5
-      { freq: 783.99, start: 3.6, dur: 0.6 },   // G5
-      { freq: 659.25, start: 4.2, dur: 0.3 },   // E5
-      { freq: 783.99, start: 4.5, dur: 0.3 },   // G5
-      { freq: 1046.50, start: 4.8, dur: 1.2 },  // C6 (long)
-    ];
+    const DUR = 3;
+    const t = ctx.currentTime;
 
-    notes.forEach(({ freq, start, dur }) => {
+    // Warm ambient chord: C4, E4, G4, B4
+    [261.63, 329.63, 392.00, 493.88].forEach((freq) => {
       const osc = ctx.createOscillator();
-      const noteGain = ctx.createGain();
+      const g = ctx.createGain();
       osc.type = "sine";
       osc.frequency.value = freq;
-      noteGain.gain.setValueAtTime(0, ctx.currentTime + start);
-      noteGain.gain.linearRampToValueAtTime(1, ctx.currentTime + start + 0.05);
-      noteGain.gain.linearRampToValueAtTime(0, ctx.currentTime + start + dur);
-      osc.connect(noteGain);
-      noteGain.connect(gainNode);
-      osc.start(ctx.currentTime + start);
-      osc.stop(ctx.currentTime + start + dur + 0.1);
+      // Slow fade in, slow fade out
+      g.gain.setValueAtTime(0, t);
+      g.gain.linearRampToValueAtTime(0.25, t + 0.8);
+      g.gain.linearRampToValueAtTime(0.2, t + 1.5);
+      g.gain.linearRampToValueAtTime(0, t + DUR);
+      osc.connect(g);
+      g.connect(master);
+      osc.start(t);
+      osc.stop(t + DUR + 0.1);
     });
+
+    // Soft shimmer layer
+    const shimmer = ctx.createOscillator();
+    const sg = ctx.createGain();
+    shimmer.type = "triangle";
+    shimmer.frequency.value = 784;
+    sg.gain.setValueAtTime(0, t);
+    sg.gain.linearRampToValueAtTime(0.08, t + 1);
+    sg.gain.linearRampToValueAtTime(0, t + DUR);
+    shimmer.connect(sg);
+    sg.connect(master);
+    shimmer.start(t);
+    shimmer.stop(t + DUR + 0.1);
   } catch {
     // Audio not supported
   }
