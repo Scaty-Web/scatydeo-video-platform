@@ -1,15 +1,22 @@
 import { useState } from "react";
+import { Navigate } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import Sidebar from "@/components/Sidebar";
 import BottomNav from "@/components/BottomNav";
 import VideoGrid from "@/components/VideoGrid";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
-import WelcomeV2Modal from "@/components/WelcomeV2Modal";
+
+const COOKIE_KEY = "scatydeo_v2_seen";
 
 const Index = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const isMobile = useIsMobile();
+
+  // First visit → redirect to /v2
+  if (!localStorage.getItem(COOKIE_KEY)) {
+    return <Navigate to="/v2" replace />;
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -26,7 +33,6 @@ const Index = () => {
         </div>
       </main>
       {isMobile && <BottomNav />}
-      <WelcomeV2Modal />
     </div>
   );
 };

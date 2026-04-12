@@ -23,6 +23,7 @@ import Playlists from "./pages/Playlists";
 import Trending from "./pages/Trending";
 import About from "./pages/About";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
+import V2Welcome from "./pages/V2Welcome";
 
 const queryClient = new QueryClient();
 
