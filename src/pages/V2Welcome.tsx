@@ -57,22 +57,14 @@ const V2Welcome = () => {
   const isTr = language === "tr";
 
   useEffect(() => {
-    // Already seen → go home
-    if (localStorage.getItem(COOKIE_KEY)) {
-      navigate("/", { replace: true });
-      return;
-    }
     playAmbientSound(audioCtxRef);
-  }, [navigate]);
+  }, []);
 
   const handleContinue = () => {
     localStorage.setItem(COOKIE_KEY, "true");
     if (audioCtxRef.current) audioCtxRef.current.close();
     navigate("/", { replace: true });
   };
-
-  // Don't render if already seen (will redirect)
-  if (localStorage.getItem(COOKIE_KEY)) return null;
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
