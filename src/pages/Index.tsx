@@ -5,6 +5,7 @@ import BottomNav from "@/components/BottomNav";
 import VideoGrid from "@/components/VideoGrid";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
+import WelcomeV2Modal from "@/components/WelcomeV2Modal";
 
 const Index = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
