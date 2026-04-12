@@ -59,6 +59,7 @@ const AppRoutes = () => {
       <Route path="/playlist/:id" element={<PlaylistPage />} />
       <Route path="/about" element={<About />} />
       <Route path="/privacy" element={<PrivacyPolicy />} />
+      <Route path="/v2" element={<V2Welcome />} />
       <Route path="/banned" element={<Banned />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
