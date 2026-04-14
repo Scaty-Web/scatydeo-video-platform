@@ -16,6 +16,7 @@ const Sidebar = ({ collapsed = false }: SidebarProps) => {
   const mainItems = [
     { icon: Home, label: t.nav.home, path: "/" },
     { icon: Flame, label: language === "tr" ? "Trendler" : "Trending", path: "/trending" },
+    { icon: Radio, label: language === "tr" ? "Canlı Yayınlar" : "Live Streams", path: "/lives" },
   ];
 
   const userItems = user
