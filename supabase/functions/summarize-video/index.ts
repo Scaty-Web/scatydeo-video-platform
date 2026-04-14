@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -9,8 +10,32 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
+    // Auth guard
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const supabase = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_ANON_KEY")!,
+      { global: { headers: { Authorization: authHeader } } }
+    );
+
+    const token = authHeader.replace("Bearer ", "");
+    const { data: claimsData, error: claimsError } = await supabase.auth.getClaims(token);
+    if (claimsError || !claimsData?.claims) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const { title, description, comments } = await req.json();
-    
+
     if (!title) {
       return new Response(JSON.stringify({ error: "Title is required" }), {
         status: 400,
@@ -18,14 +43,19 @@ serve(async (req) => {
       });
     }
 
+    // Input length limits to prevent credit draining
+    const safeTitle = String(title).slice(0, 500);
+    const safeDescription = description ? String(description).slice(0, 1000) : "";
+    const safeComments = Array.isArray(comments) ? comments.slice(0, 5).map((c: any) => String(c).slice(0, 200)) : [];
+
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
 
     const prompt = `Summarize the following video content in a concise paragraph (3-5 sentences). Write the summary in the same language as the title.
 
-Video Title: ${title}
-${description ? `Description: ${description}` : ""}
-${comments && comments.length > 0 ? `Top Comments: ${comments.slice(0, 5).join(", ")}` : ""}
+Video Title: ${safeTitle}
+${safeDescription ? `Description: ${safeDescription}` : ""}
+${safeComments.length > 0 ? `Top Comments: ${safeComments.join(", ")}` : ""}
 
 Provide a helpful summary that tells viewers what this video is about.`;
 
