@@ -1,0 +1,457 @@
+import { useState, useRef, useEffect, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
+import { useLanguage } from "@/hooks/useLanguage";
+import Navbar from "@/components/Navbar";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { useToast } from "@/hooks/use-toast";
+import {
+  Radio,
+  Monitor,
+  Video,
+  Play,
+  Pause,
+  Square,
+  MessageSquare,
+  MessageSquareOff,
+  AlertTriangle,
+  Save,
+  Trash2,
+} from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogAction,
+  AlertDialogCancel,
+} from "@/components/ui/alert-dialog";
+
+type SourceType = "none" | "video" | "screen";
+
+const LiveStream = () => {
+  const { user } = useAuth();
+  const { t } = useLanguage();
+  const navigate = useNavigate();
+  const { toast } = useToast();
+
+  const [title, setTitle] = useState("");
+  const [isStreaming, setIsStreaming] = useState(false);
+  const [sourceType, setSourceType] = useState<SourceType>("none");
+  const [chatEnabled, setChatEnabled] = useState(true);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [showSaveDialog, setShowSaveDialog] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const screenStreamRef = useRef<MediaStream | null>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const recordedChunksRef = useRef<Blob[]>([]);
+  const recordedBlobRef = useRef<Blob | null>(null);
+
+  // Clean up screen stream on unmount
+  useEffect(() => {
+    return () => {
+      stopScreenShare();
+    };
+  }, []);
+
+  const stopScreenShare = () => {
+    if (screenStreamRef.current) {
+      screenStreamRef.current.getTracks().forEach((track) => track.stop());
+      screenStreamRef.current = null;
+    }
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
+      mediaRecorderRef.current.stop();
+    }
+  };
+
+  const handleSelectVideo = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !videoRef.current) return;
+
+    stopScreenShare();
+    const url = URL.createObjectURL(file);
+    videoRef.current.srcObject = null;
+    videoRef.current.src = url;
+    videoRef.current.load();
+    setSourceType("video");
+    setIsPlaying(false);
+  };
+
+  const handleShareScreen = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getDisplayMedia({
+        video: true,
+        audio: true,
+      });
+
+      screenStreamRef.current = stream;
+
+      if (videoRef.current) {
+        videoRef.current.src = "";
+        videoRef.current.srcObject = stream;
+        videoRef.current.play();
+        setIsPlaying(true);
+      }
+
+      setSourceType("screen");
+
+      // Start recording
+      recordedChunksRef.current = [];
+      const recorder = new MediaRecorder(stream, {
+        mimeType: MediaRecorder.isTypeSupported("video/webm;codecs=vp9")
+          ? "video/webm;codecs=vp9"
+          : "video/webm",
+      });
+      recorder.ondataavailable = (e) => {
+        if (e.data.size > 0) recordedChunksRef.current.push(e.data);
+      };
+      recorder.onstop = () => {
+        const blob = new Blob(recordedChunksRef.current, { type: "video/webm" });
+        recordedBlobRef.current = blob;
+      };
+      recorder.start(1000);
+      mediaRecorderRef.current = recorder;
+
+      // Listen for user stopping share via browser UI
+      stream.getVideoTracks()[0].onended = () => {
+        handleStopSharing();
+      };
+    } catch {
+      toast({
+        title: t.common.error,
+        description: t.stream.screenShareError,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleStopSharing = () => {
+    stopScreenShare();
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
+      videoRef.current.src = "";
+    }
+    setSourceType("none");
+    setIsPlaying(false);
+  };
+
+  const togglePlay = () => {
+    if (!videoRef.current || sourceType !== "video") return;
+    if (videoRef.current.paused) {
+      videoRef.current.play();
+      setIsPlaying(true);
+    } else {
+      videoRef.current.pause();
+      setIsPlaying(false);
+    }
+  };
+
+  const handleStartStream = () => {
+    if (sourceType === "none") {
+      toast({
+        title: t.stream.noSource,
+        description: t.stream.noSourceDesc,
+        variant: "destructive",
+      });
+      return;
+    }
+    if (!title.trim()) {
+      toast({
+        title: t.upload.titleRequired,
+        description: t.upload.titleRequiredDesc,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // If video source, start recording it too
+    if (sourceType === "video" && videoRef.current) {
+      const stream = (videoRef.current as any).captureStream?.() || (videoRef.current as any).mozCaptureStream?.();
+      if (stream) {
+        recordedChunksRef.current = [];
+        const recorder = new MediaRecorder(stream, {
+          mimeType: MediaRecorder.isTypeSupported("video/webm;codecs=vp9")
+            ? "video/webm;codecs=vp9"
+            : "video/webm",
+        });
+        recorder.ondataavailable = (e) => {
+          if (e.data.size > 0) recordedChunksRef.current.push(e.data);
+        };
+        recorder.onstop = () => {
+          const blob = new Blob(recordedChunksRef.current, { type: "video/webm" });
+          recordedBlobRef.current = blob;
+        };
+        recorder.start(1000);
+        mediaRecorderRef.current = recorder;
+      }
+    }
+
+    setIsStreaming(true);
+  };
+
+  const handleEndStream = () => {
+    // Stop recorder
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
+      mediaRecorderRef.current.stop();
+    }
+    setIsStreaming(false);
+    setShowSaveDialog(true);
+  };
+
+  const handleSaveRecording = async () => {
+    if (!user || !recordedBlobRef.current) {
+      setShowSaveDialog(false);
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const videoPath = `${user.id}/${Date.now()}.webm`;
+      const { error: uploadError } = await supabase.storage
+        .from("videos")
+        .upload(videoPath, recordedBlobRef.current);
+
+      if (uploadError) throw uploadError;
+
+      const { data: urlData } = supabase.storage.from("videos").getPublicUrl(videoPath);
+
+      await supabase.from("videos").insert({
+        title: title.trim() || "Live Stream Recording",
+        description: `Live stream recording`,
+        video_url: urlData.publicUrl,
+        user_id: user.id,
+        is_public: true,
+      });
+
+      toast({ title: t.stream.saved, description: t.stream.savedDesc });
+    } catch (err: any) {
+      toast({ title: t.common.error, description: err.message, variant: "destructive" });
+    } finally {
+      setSaving(false);
+      cleanup();
+      setShowSaveDialog(false);
+    }
+  };
+
+  const handleDontSave = () => {
+    toast({ title: t.stream.deleted, description: t.stream.deletedDesc });
+    cleanup();
+    setShowSaveDialog(false);
+  };
+
+  const cleanup = () => {
+    stopScreenShare();
+    recordedBlobRef.current = null;
+    recordedChunksRef.current = [];
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
+      videoRef.current.src = "";
+    }
+    setSourceType("none");
+    setIsPlaying(false);
+    setTitle("");
+  };
+
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Navbar />
+        <div className="container mx-auto px-4 py-20 text-center">
+          <AlertTriangle className="w-16 h-16 text-primary mx-auto mb-4" />
+          <h1 className="text-2xl font-bold mb-2">{t.stream.signInRequired}</h1>
+          <p className="text-muted-foreground mb-6">{t.stream.signInToStream}</p>
+          <Button variant="hero" onClick={() => navigate("/auth")}>
+            {t.common.signIn}
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-background">
+      <Navbar />
+
+      <main className="container mx-auto px-4 py-20">
+        <div className="max-w-4xl mx-auto">
+          {/* Header */}
+          <div className="text-center mb-8">
+            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-accent flex items-center justify-center mx-auto mb-4 shadow-glow">
+              <Radio className="w-8 h-8 text-primary-foreground" />
+            </div>
+            <h1 className="text-3xl font-bold">{t.stream.title}</h1>
+          </div>
+
+          {/* Title input */}
+          {!isStreaming && (
+            <div className="mb-6 max-w-md mx-auto">
+              <Label>{t.stream.streamTitle}</Label>
+              <Input
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder={t.stream.streamTitlePlaceholder}
+                className="bg-muted/30 border-primary/30 mt-1"
+                maxLength={100}
+              />
+            </div>
+          )}
+
+          {/* Video preview */}
+          <div className="relative bg-black rounded-xl overflow-hidden aspect-video mb-6">
+            <video
+              ref={videoRef}
+              className="w-full h-full object-contain"
+              playsInline
+              onPlay={() => setIsPlaying(true)}
+              onPause={() => setIsPlaying(false)}
+            />
+
+            {sourceType === "none" && (
+              <div className="absolute inset-0 flex items-center justify-center">
+                <p className="text-muted-foreground">{t.stream.noSourceDesc}</p>
+              </div>
+            )}
+
+            {isStreaming && (
+              <div className="absolute top-4 left-4 bg-destructive text-destructive-foreground px-3 py-1 rounded-md text-sm font-bold animate-pulse">
+                🔴 {t.stream.live}
+              </div>
+            )}
+
+            {/* Play/Pause overlay for video source */}
+            {sourceType === "video" && isStreaming && (
+              <button
+                onClick={togglePlay}
+                className="absolute inset-0 flex items-center justify-center bg-black/0 hover:bg-black/20 transition-colors group"
+              >
+                {isPlaying ? (
+                  <Pause className="w-16 h-16 text-white opacity-0 group-hover:opacity-80 transition-opacity" />
+                ) : (
+                  <Play className="w-16 h-16 text-white opacity-80" />
+                )}
+              </button>
+            )}
+          </div>
+
+          {/* Controls */}
+          <div className="flex flex-wrap items-center justify-center gap-3">
+            {/* Source selection - only before streaming */}
+            {!isStreaming && (
+              <>
+                <div>
+                  <input
+                    type="file"
+                    accept="video/*"
+                    onChange={handleSelectVideo}
+                    className="hidden"
+                    id="stream-video-input"
+                  />
+                  <label htmlFor="stream-video-input">
+                    <Button variant={sourceType === "video" ? "default" : "outline"} asChild>
+                      <span className="cursor-pointer">
+                        <Video className="w-4 h-4 mr-2" />
+                        {t.stream.selectVideo}
+                      </span>
+                    </Button>
+                  </label>
+                </div>
+
+                {sourceType === "screen" ? (
+                  <Button variant="destructive" onClick={handleStopSharing}>
+                    <Square className="w-4 h-4 mr-2" />
+                    {t.stream.stopSharing}
+                  </Button>
+                ) : (
+                  <Button variant="outline" onClick={handleShareScreen}>
+                    <Monitor className="w-4 h-4 mr-2" />
+                    {t.stream.shareScreen}
+                  </Button>
+                )}
+              </>
+            )}
+
+            {/* Play/Pause for video before streaming */}
+            {sourceType === "video" && !isStreaming && (
+              <Button variant="outline" onClick={togglePlay}>
+                {isPlaying ? <Pause className="w-4 h-4 mr-2" /> : <Play className="w-4 h-4 mr-2" />}
+                {isPlaying ? t.stream.paused : t.stream.playing}
+              </Button>
+            )}
+
+            {/* Chat toggle */}
+            {isStreaming && (
+              <Button
+                variant={chatEnabled ? "default" : "outline"}
+                onClick={() => setChatEnabled(!chatEnabled)}
+              >
+                {chatEnabled ? (
+                  <MessageSquare className="w-4 h-4 mr-2" />
+                ) : (
+                  <MessageSquareOff className="w-4 h-4 mr-2" />
+                )}
+                {chatEnabled ? t.stream.disableChat : t.stream.enableChat}
+              </Button>
+            )}
+
+            {/* Start / End stream */}
+            {!isStreaming ? (
+              <Button variant="hero" onClick={handleStartStream}>
+                <Radio className="w-4 h-4 mr-2" />
+                {t.stream.startStream}
+              </Button>
+            ) : (
+              <Button variant="destructive" onClick={handleEndStream}>
+                <Square className="w-4 h-4 mr-2" />
+                {t.stream.endStream}
+              </Button>
+            )}
+          </div>
+
+          {/* Chat area */}
+          {isStreaming && chatEnabled && (
+            <div className="mt-6 border border-border rounded-xl p-4 max-w-md mx-auto">
+              <h3 className="font-semibold mb-3 flex items-center gap-2">
+                <MessageSquare className="w-4 h-4" />
+                {t.stream.chat}
+              </h3>
+              <div className="h-48 bg-muted/20 rounded-lg flex items-center justify-center">
+                <p className="text-sm text-muted-foreground">
+                  {t.stream.chat} — {t.stream.live}
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
+      </main>
+
+      {/* Save dialog */}
+      <AlertDialog open={showSaveDialog} onOpenChange={setShowSaveDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t.stream.streamEnded}</AlertDialogTitle>
+            <AlertDialogDescription>{t.stream.saveRecording}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={handleDontSave} disabled={saving}>
+              <Trash2 className="w-4 h-4 mr-2" />
+              {t.stream.dontSave}
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={handleSaveRecording} disabled={saving}>
+              <Save className="w-4 h-4 mr-2" />
+              {saving ? t.common.loading : t.stream.saveBtn}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
+  );
+};
+
+export default LiveStream;

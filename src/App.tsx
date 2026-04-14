@@ -24,6 +24,7 @@ import Trending from "./pages/Trending";
 import About from "./pages/About";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import V2Welcome from "./pages/V2Welcome";
+import LiveStream from "./pages/LiveStream";
 
 const queryClient = new QueryClient();
 
@@ -60,6 +61,7 @@ const AppRoutes = () => {
       <Route path="/about" element={<About />} />
       <Route path="/privacy" element={<PrivacyPolicy />} />
       <Route path="/v2" element={<V2Welcome />} />
+      <Route path="/stream" element={<LiveStream />} />
       <Route path="/banned" element={<Banned />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
