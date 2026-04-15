@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -47,6 +47,7 @@ const LiveStream = () => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [showSaveDialog, setShowSaveDialog] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [streamId, setStreamId] = useState<string | null>(null);
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const screenStreamRef = useRef<MediaStream | null>(null);
@@ -54,12 +55,16 @@ const LiveStream = () => {
   const recordedChunksRef = useRef<Blob[]>([]);
   const recordedBlobRef = useRef<Blob | null>(null);
 
-  // Clean up screen stream on unmount
+  // Clean up on unmount
   useEffect(() => {
     return () => {
       stopScreenShare();
+      // If streaming, end it
+      if (streamId) {
+        supabase.from("streams").update({ is_live: false, ended_at: new Date().toISOString() }).eq("id", streamId).then(() => {});
+      }
     };
-  }, []);
+  }, [streamId]);
 
   const stopScreenShare = () => {
     if (screenStreamRef.current) {
@@ -153,7 +158,8 @@ const LiveStream = () => {
     }
   };
 
-  const handleStartStream = () => {
+  const handleStartStream = async () => {
+    if (!user) return;
     if (sourceType === "none") {
       toast({
         title: t.stream.noSource,
@@ -170,6 +176,22 @@ const LiveStream = () => {
       });
       return;
     }
+
+    // Create stream record in DB
+    const { data: streamData, error } = await supabase.from("streams").insert({
+      title: title.trim(),
+      user_id: user.id,
+      is_live: true,
+      chat_enabled: chatEnabled,
+      started_at: new Date().toISOString(),
+    }).select("id").single();
+
+    if (error) {
+      toast({ title: t.common.error, description: error.message, variant: "destructive" });
+      return;
+    }
+
+    setStreamId(streamData.id);
 
     // If video source, start recording it too
     if (sourceType === "video" && videoRef.current) {
@@ -196,13 +218,31 @@ const LiveStream = () => {
     setIsStreaming(true);
   };
 
-  const handleEndStream = () => {
+  const handleEndStream = async () => {
     // Stop recorder
     if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
       mediaRecorderRef.current.stop();
     }
+
+    // Update stream record
+    if (streamId) {
+      await supabase.from("streams").update({
+        is_live: false,
+        ended_at: new Date().toISOString(),
+      }).eq("id", streamId);
+    }
+
     setIsStreaming(false);
     setShowSaveDialog(true);
+  };
+
+  // Update chat_enabled in DB when toggled during stream
+  const handleToggleChat = async () => {
+    const newValue = !chatEnabled;
+    setChatEnabled(newValue);
+    if (streamId) {
+      await supabase.from("streams").update({ chat_enabled: newValue }).eq("id", streamId);
+    }
   };
 
   const handleSaveRecording = async () => {
@@ -240,7 +280,11 @@ const LiveStream = () => {
     }
   };
 
-  const handleDontSave = () => {
+  const handleDontSave = async () => {
+    // Delete the stream record entirely
+    if (streamId) {
+      await supabase.from("streams").delete().eq("id", streamId);
+    }
     toast({ title: t.stream.deleted, description: t.stream.deletedDesc });
     cleanup();
     setShowSaveDialog(false);
@@ -257,6 +301,7 @@ const LiveStream = () => {
     setSourceType("none");
     setIsPlaying(false);
     setTitle("");
+    setStreamId(null);
   };
 
   if (!user) {
@@ -342,7 +387,6 @@ const LiveStream = () => {
 
           {/* Controls */}
           <div className="flex flex-wrap items-center justify-center gap-3">
-            {/* Source selection - only before streaming */}
             {!isStreaming && (
               <>
                 <div>
@@ -377,7 +421,6 @@ const LiveStream = () => {
               </>
             )}
 
-            {/* Play/Pause for video before streaming */}
             {sourceType === "video" && !isStreaming && (
               <Button variant="outline" onClick={togglePlay}>
                 {isPlaying ? <Pause className="w-4 h-4 mr-2" /> : <Play className="w-4 h-4 mr-2" />}
@@ -385,11 +428,10 @@ const LiveStream = () => {
               </Button>
             )}
 
-            {/* Chat toggle */}
             {isStreaming && (
               <Button
                 variant={chatEnabled ? "default" : "outline"}
-                onClick={() => setChatEnabled(!chatEnabled)}
+                onClick={handleToggleChat}
               >
                 {chatEnabled ? (
                   <MessageSquare className="w-4 h-4 mr-2" />
@@ -400,7 +442,6 @@ const LiveStream = () => {
               </Button>
             )}
 
-            {/* Start / End stream */}
             {!isStreaming ? (
               <Button variant="hero" onClick={handleStartStream}>
                 <Radio className="w-4 h-4 mr-2" />
