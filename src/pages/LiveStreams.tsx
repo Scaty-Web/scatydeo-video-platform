@@ -19,17 +19,20 @@ interface LiveStreamItem {
 }
 
 const LiveStreams = () => {
-  const { t, language } = useLanguage();
+  const { language } = useLanguage();
   const [streams, setStreams] = useState<LiveStreamItem[]>([]);
   const [profiles, setProfiles] = useState<Record<string, { username: string | null; avatar_url: string | null }>>({});
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetchLiveStreams();
+    // Auto-refresh every 10 seconds
+    const interval = setInterval(fetchLiveStreams, 10000);
+    return () => clearInterval(interval);
   }, []);
 
   const fetchLiveStreams = async () => {
-    setLoading(true);
+    // Use the streams_public view which excludes sensitive fields
     const { data, error } = await supabase
       .from("streams_public")
       .select("*")
@@ -59,7 +62,7 @@ const LiveStreams = () => {
     <div className="min-h-screen bg-background">
       <Navbar />
       <Sidebar />
-      <main className="ml-56 pt-14 p-6">
+      <main className="ml-0 md:ml-56 pt-14 p-6">
         <div className="max-w-6xl mx-auto">
           <div className="flex items-center gap-3 mb-8">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-destructive to-primary flex items-center justify-center">
@@ -101,11 +104,11 @@ const LiveStreams = () => {
                         <Radio className="w-12 h-12 text-muted-foreground" />
                       )}
                       <Badge variant="destructive" className="absolute top-2 left-2 animate-pulse">
-                        🔴 {t.stream.live}
+                        🔴 LIVE
                       </Badge>
                       <div className="absolute bottom-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded flex items-center gap-1">
                         <Eye className="w-3 h-3" />
-                        {stream.viewer_count} {t.stream.viewers}
+                        {stream.viewer_count}
                       </div>
                     </div>
                     <div className="p-3">

@@ -58,13 +58,14 @@ const LiveWatch = () => {
   useEffect(() => {
     if (!id) return;
     fetchStream();
+    // Poll stream status every 5 seconds for live updates
+    const interval = setInterval(fetchStream, 5000);
+    return () => clearInterval(interval);
   }, [id]);
 
   useEffect(() => {
     if (!stream?.id || !stream.chat_enabled) return;
     fetchChatMessages();
-
-    // Poll for new messages every 3 seconds
     const interval = setInterval(fetchChatMessages, 3000);
     return () => clearInterval(interval);
   }, [stream?.id, stream?.chat_enabled]);
@@ -74,7 +75,6 @@ const LiveWatch = () => {
   }, [chatMessages]);
 
   const fetchStream = async () => {
-    setLoading(true);
     const { data, error } = await supabase
       .from("streams_public")
       .select("*")
@@ -82,13 +82,13 @@ const LiveWatch = () => {
       .single();
 
     if (error || !data) {
-      setLoading(false);
+      if (!stream) setLoading(false);
       return;
     }
 
     setStream(data as unknown as StreamData);
 
-    if (data.user_id) {
+    if (data.user_id && !streamerProfile) {
       const { data: profile } = await supabase
         .from("profiles")
         .select("username, avatar_url")
@@ -109,7 +109,6 @@ const LiveWatch = () => {
       .limit(100);
 
     if (data && data.length > 0) {
-      // Fetch usernames
       const userIds = [...new Set(data.map((m) => m.user_id))];
       const { data: profiles } = await supabase
         .from("profiles")
@@ -284,7 +283,6 @@ const LiveWatch = () => {
                     </div>
                   </ScrollArea>
 
-                  {/* Chat input - only for authenticated users */}
                   {user ? (
                     <div className="p-3 border-t border-border flex gap-2">
                       <Input
