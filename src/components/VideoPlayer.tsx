@@ -158,8 +158,9 @@ const VideoPlayer = ({ src, poster, className }: VideoPlayerProps) => {
     if (!video || !progressBar) return;
 
     const rect = progressBar.getBoundingClientRect();
-    const percent = (e.clientX - rect.left) / rect.width;
+    const percent = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
     const newTime = percent * duration;
+    if (!isFinite(newTime)) return;
     video.currentTime = newTime;
     setCurrentTime(newTime);
   };

@@ -90,50 +90,76 @@ const LiveStream = () => {
   };
 
   const handleShareScreen = async () => {
+    // First, stop any existing screen share
+    stopScreenShare();
+
+    let stream: MediaStream;
     try {
-      const stream = await navigator.mediaDevices.getDisplayMedia({
-        video: true,
+      // getDisplayMedia must be called directly in gesture handler
+      stream = await navigator.mediaDevices.getDisplayMedia({
+        video: { cursor: "always" } as any,
         audio: true,
       });
-
-      screenStreamRef.current = stream;
-
-      if (videoRef.current) {
-        videoRef.current.src = "";
-        videoRef.current.srcObject = stream;
-        videoRef.current.play();
-        setIsPlaying(true);
+    } catch (err: any) {
+      // User cancelled or browser denied
+      if (err?.name === "NotAllowedError" || err?.name === "AbortError") {
+        // User cancelled the picker — not an error
+        return;
       }
-
-      setSourceType("screen");
-
-      // Start recording
-      recordedChunksRef.current = [];
-      const recorder = new MediaRecorder(stream, {
-        mimeType: MediaRecorder.isTypeSupported("video/webm;codecs=vp9")
-          ? "video/webm;codecs=vp9"
-          : "video/webm",
-      });
-      recorder.ondataavailable = (e) => {
-        if (e.data.size > 0) recordedChunksRef.current.push(e.data);
-      };
-      recorder.onstop = () => {
-        const blob = new Blob(recordedChunksRef.current, { type: "video/webm" });
-        recordedBlobRef.current = blob;
-      };
-      recorder.start(1000);
-      mediaRecorderRef.current = recorder;
-
-      // Listen for user stopping share via browser UI
-      stream.getVideoTracks()[0].onended = () => {
-        handleStopSharing();
-      };
-    } catch {
+      console.error("Screen share error:", err);
       toast({
         title: t.common.error,
         description: t.stream.screenShareError,
         variant: "destructive",
       });
+      return;
+    }
+
+    screenStreamRef.current = stream;
+
+    if (videoRef.current) {
+      videoRef.current.src = "";
+      videoRef.current.srcObject = stream;
+      try {
+        await videoRef.current.play();
+      } catch {
+        // autoplay may fail silently
+      }
+      setIsPlaying(true);
+    }
+
+    setSourceType("screen");
+
+    // Start recording
+    recordedChunksRef.current = [];
+    const mimeType = MediaRecorder.isTypeSupported("video/webm;codecs=vp9")
+      ? "video/webm;codecs=vp9"
+      : MediaRecorder.isTypeSupported("video/webm")
+        ? "video/webm"
+        : "";
+    
+    const recorderOptions: MediaRecorderOptions = mimeType ? { mimeType } : {};
+    try {
+      const recorder = new MediaRecorder(stream, recorderOptions);
+      recorder.ondataavailable = (e) => {
+        if (e.data.size > 0) recordedChunksRef.current.push(e.data);
+      };
+      recorder.onstop = () => {
+        const blob = new Blob(recordedChunksRef.current, { type: mimeType || "video/webm" });
+        recordedBlobRef.current = blob;
+      };
+      recorder.start(1000);
+      mediaRecorderRef.current = recorder;
+    } catch (recErr) {
+      console.error("MediaRecorder error:", recErr);
+    }
+
+    // Listen for user stopping share via browser UI
+    const videoTrack = stream.getVideoTracks()[0];
+    if (videoTrack) {
+      videoTrack.onended = () => {
+        handleStopSharing();
+      };
     }
   };
 
