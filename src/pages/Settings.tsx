@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -11,8 +11,9 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { User, Settings as SettingsIcon, Bell, Shield, LogOut, KeyRound, AlertTriangle } from "lucide-react";
+import { User, Settings as SettingsIcon, Bell, Shield, LogOut, KeyRound, AlertTriangle, Upload as UploadIcon, Image as ImageIcon } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { getAvatarUrl, getBannerUrl } from "@/lib/defaults";
 
 interface Profile {
   id: string;
@@ -31,11 +32,17 @@ const Settings = () => {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [uploadingBanner, setUploadingBanner] = useState(false);
 
   const [displayName, setDisplayName] = useState("");
   const [username, setUsername] = useState("");
   const [bio, setBio] = useState("");
   const [avatarUrl, setAvatarUrl] = useState("");
+  const [bannerUrl, setBannerUrl] = useState("");
+
+  const avatarInputRef = useRef<HTMLInputElement>(null);
+  const bannerInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!user) {
@@ -55,18 +62,81 @@ const Settings = () => {
       .maybeSingle();
 
     if (!error && data) {
-      setProfile(data);
+      setProfile(data as Profile);
       setDisplayName(data.display_name || "");
       setUsername(data.username || "");
       setBio(data.bio || "");
       setAvatarUrl(data.avatar_url || "");
+      setBannerUrl((data as any).banner_url || "");
     }
     setLoading(false);
   };
 
+  const uploadImage = async (
+    file: File,
+    bucket: "avatars" | "banners",
+    maxSizeMB: number
+  ): Promise<string | null> => {
+    if (!user) return null;
+    if (file.size > maxSizeMB * 1024 * 1024) {
+      toast({
+        title: t.common.error,
+        description: `Max ${maxSizeMB}MB`,
+        variant: "destructive",
+      });
+      return null;
+    }
+    if (!file.type.startsWith("image/")) {
+      toast({ title: t.common.error, description: "Only images allowed", variant: "destructive" });
+      return null;
+    }
+
+    const ext = file.name.split(".").pop() || "png";
+    const path = `${user.id}/${Date.now()}.${ext}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from(bucket)
+      .upload(path, file, { upsert: true });
+
+    if (uploadError) {
+      toast({ title: t.common.error, description: uploadError.message, variant: "destructive" });
+      return null;
+    }
+
+    const { data } = supabase.storage.from(bucket).getPublicUrl(path);
+    return data.publicUrl;
+  };
+
+  const handleAvatarFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+    setUploadingAvatar(true);
+    const url = await uploadImage(file, "avatars", 5);
+    if (url) {
+      setAvatarUrl(url);
+      await supabase.from("profiles").update({ avatar_url: url }).eq("id", user.id);
+      toast({ title: t.common.success, description: t.settings.profileUpdated });
+    }
+    setUploadingAvatar(false);
+    if (avatarInputRef.current) avatarInputRef.current.value = "";
+  };
+
+  const handleBannerFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+    setUploadingBanner(true);
+    const url = await uploadImage(file, "banners", 10);
+    if (url) {
+      setBannerUrl(url);
+      await supabase.from("profiles").update({ banner_url: url } as any).eq("id", user.id);
+      toast({ title: t.common.success, description: t.settings.profileUpdated });
+    }
+    setUploadingBanner(false);
+    if (bannerInputRef.current) bannerInputRef.current.value = "";
+  };
+
   const handleSave = async () => {
     if (!user) return;
-
     setSaving(true);
 
     const { error } = await supabase
@@ -75,26 +145,21 @@ const Settings = () => {
         display_name: displayName,
         username: username,
         bio: bio,
-        avatar_url: avatarUrl,
       })
       .eq("id", user.id);
 
     if (error) {
       toast({
         title: t.common.error,
-        description: error.message.includes("unique") 
-          ? t.settings.usernameExists 
+        description: error.message.includes("unique")
+          ? t.settings.usernameExists
           : t.settings.updateError,
         variant: "destructive",
       });
     } else {
-      toast({
-        title: t.common.success,
-        description: t.settings.profileUpdated,
-      });
+      toast({ title: t.common.success, description: t.settings.profileUpdated });
       fetchProfile();
     }
-
     setSaving(false);
   };
 
@@ -144,23 +209,63 @@ const Settings = () => {
 
             <TabsContent value="profile">
               <div className="glass-card p-6 rounded-xl space-y-6">
+                {/* Banner */}
+                <div className="space-y-2">
+                  <Label>Banner</Label>
+                  <div
+                    className="relative h-40 rounded-xl overflow-hidden border border-primary/30 bg-cover bg-center"
+                    style={{ backgroundImage: `url(${getBannerUrl(bannerUrl)})` }}
+                  >
+                    <div className="absolute inset-0 bg-black/40 opacity-0 hover:opacity-100 transition-opacity flex items-center justify-center">
+                      <Button
+                        variant="hero"
+                        size="sm"
+                        onClick={() => bannerInputRef.current?.click()}
+                        disabled={uploadingBanner}
+                      >
+                        <UploadIcon className="w-4 h-4 mr-2" />
+                        {uploadingBanner ? "..." : "Banner Yükle"}
+                      </Button>
+                    </div>
+                  </div>
+                  <input
+                    ref={bannerInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleBannerFile}
+                  />
+                  <p className="text-xs text-muted-foreground">Önerilen: 1280x320 • Maks 10MB</p>
+                </div>
+
                 {/* Avatar */}
                 <div className="flex items-center gap-6">
                   <Avatar className="w-24 h-24 border-2 border-primary/30">
-                    <AvatarImage src={avatarUrl || undefined} />
+                    <AvatarImage src={getAvatarUrl(avatarUrl)} />
                     <AvatarFallback>
                       <User className="w-12 h-12" />
                     </AvatarFallback>
                   </Avatar>
                   <div className="space-y-2 flex-1">
-                    <Label htmlFor="avatar">{t.settings.avatarUrl}</Label>
-                    <Input
-                      id="avatar"
-                      placeholder="https://example.com/avatar.jpg"
-                      value={avatarUrl}
-                      onChange={(e) => setAvatarUrl(e.target.value)}
-                      className="bg-background/50 border-primary/30"
-                    />
+                    <Label>Profil Fotoğrafı</Label>
+                    <div>
+                      <Button
+                        variant="outline"
+                        onClick={() => avatarInputRef.current?.click()}
+                        disabled={uploadingAvatar}
+                      >
+                        <ImageIcon className="w-4 h-4 mr-2" />
+                        {uploadingAvatar ? "..." : "Bilgisayardan Yükle"}
+                      </Button>
+                      <input
+                        ref={avatarInputRef}
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={handleAvatarFile}
+                      />
+                    </div>
+                    <p className="text-xs text-muted-foreground">Maks 5MB</p>
                   </div>
                 </div>
 
@@ -203,11 +308,7 @@ const Settings = () => {
                   />
                 </div>
 
-                <Button
-                  variant="hero"
-                  onClick={handleSave}
-                  disabled={saving}
-                >
+                <Button variant="hero" onClick={handleSave} disabled={saving}>
                   {saving ? t.settings.saving : t.settings.saveChanges}
                 </Button>
               </div>
@@ -216,9 +317,7 @@ const Settings = () => {
             <TabsContent value="notifications">
               <div className="glass-card p-6 rounded-xl">
                 <h3 className="font-bold text-lg mb-4">{t.settings.notificationSettings}</h3>
-                <p className="text-muted-foreground">
-                  {t.settings.notificationComingSoon}
-                </p>
+                <p className="text-muted-foreground">{t.settings.notificationComingSoon}</p>
               </div>
             </TabsContent>
 
@@ -253,7 +352,6 @@ const PrivacyTab = ({ t, user, signOut }: { t: any; user: any; signOut: () => vo
 
     setResetting(true);
 
-    // Verify current password by re-signing in
     const { error: signInError } = await supabase.auth.signInWithPassword({
       email: user.email!,
       password: currentPassword,
@@ -286,7 +384,6 @@ const PrivacyTab = ({ t, user, signOut }: { t: any; user: any; signOut: () => vo
         {t.settings.privacySecurity}
       </h3>
 
-      {/* Password Reset */}
       <div className="space-y-4">
         <h4 className="font-semibold flex items-center gap-2">
           <KeyRound className="w-4 h-4" />
@@ -300,33 +397,15 @@ const PrivacyTab = ({ t, user, signOut }: { t: any; user: any; signOut: () => vo
         <div className="space-y-3">
           <div className="space-y-2">
             <Label htmlFor="currentPassword">{t.settings.currentPassword}</Label>
-            <Input
-              id="currentPassword"
-              type="password"
-              value={currentPassword}
-              onChange={(e) => setCurrentPassword(e.target.value)}
-              className="bg-background/50 border-primary/30"
-            />
+            <Input id="currentPassword" type="password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} className="bg-background/50 border-primary/30" />
           </div>
           <div className="space-y-2">
             <Label htmlFor="newPassword">{t.settings.newPassword}</Label>
-            <Input
-              id="newPassword"
-              type="password"
-              value={newPassword}
-              onChange={(e) => setNewPassword(e.target.value)}
-              className="bg-background/50 border-primary/30"
-            />
+            <Input id="newPassword" type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} className="bg-background/50 border-primary/30" />
           </div>
           <div className="space-y-2">
             <Label htmlFor="confirmPassword">{t.settings.confirmNewPassword}</Label>
-            <Input
-              id="confirmPassword"
-              type="password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              className="bg-background/50 border-primary/30"
-            />
+            <Input id="confirmPassword" type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} className="bg-background/50 border-primary/30" />
           </div>
           <Button variant="hero" onClick={handlePasswordReset} disabled={resetting || !currentPassword || !newPassword || !confirmPassword}>
             <KeyRound className="w-4 h-4 mr-2" />
@@ -335,14 +414,9 @@ const PrivacyTab = ({ t, user, signOut }: { t: any; user: any; signOut: () => vo
         </div>
       </div>
 
-      {/* Danger Zone */}
       <div className="pt-6 border-t border-primary/20">
         <h4 className="font-semibold text-destructive mb-2">{t.settings.dangerZone}</h4>
-        <Button
-          variant="outline"
-          className="border-destructive/50 text-destructive hover:bg-destructive/10"
-          onClick={signOut}
-        >
+        <Button variant="outline" className="border-destructive/50 text-destructive hover:bg-destructive/10" onClick={signOut}>
           <LogOut className="w-4 h-4 mr-2" />
           {t.common.signOut}
         </Button>

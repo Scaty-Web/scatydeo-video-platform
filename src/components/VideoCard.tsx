@@ -2,6 +2,7 @@ import { Clock, Eye, User } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useLanguage } from "@/hooks/useLanguage";
+import { getAvatarUrl, getThumbnailUrl } from "@/lib/defaults";
 
 interface VideoCardProps {
   title: string;
@@ -61,7 +62,7 @@ const VideoCard = ({
       {/* Thumbnail */}
       <div className="relative aspect-video rounded-xl overflow-hidden bg-muted mb-3">
         <img
-          src={thumbnail}
+          src={getThumbnailUrl(thumbnail)}
           alt={title}
           className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
         />
@@ -76,7 +77,7 @@ const VideoCard = ({
         {authorUsername ? (
           <Link to={`/channel/${authorUsername}`} onClick={(e) => e.stopPropagation()}>
             <Avatar className="w-9 h-9 flex-shrink-0 mt-0.5">
-              <AvatarImage src={authorAvatar || undefined} />
+              <AvatarImage src={getAvatarUrl(authorAvatar)} />
               <AvatarFallback className="bg-muted text-muted-foreground text-xs">
                 <User className="w-4 h-4" />
               </AvatarFallback>
@@ -84,6 +85,7 @@ const VideoCard = ({
           </Link>
         ) : (
           <Avatar className="w-9 h-9 flex-shrink-0 mt-0.5">
+            <AvatarImage src={getAvatarUrl(authorAvatar)} />
             <AvatarFallback className="bg-muted text-muted-foreground text-xs">
               <User className="w-4 h-4" />
             </AvatarFallback>
