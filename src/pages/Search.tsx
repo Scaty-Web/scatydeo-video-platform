@@ -121,7 +121,7 @@ const Search = () => {
                   key={video.id}
                   videoId={video.id}
                   title={video.title}
-                  thumbnail={video.thumbnail_url || '/placeholder.svg'}
+                  thumbnail={video.thumbnail_url || ''}
                   duration={video.duration || '0:00'}
                   views={formatViews(video.views_count)}
                   author={video.profiles?.display_name || video.profiles?.username || t.videoGrid.anonymous}

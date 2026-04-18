@@ -14,6 +14,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import LanguageSwitcher from "./LanguageSwitcher";
+import { getAvatarUrl } from "@/lib/defaults";
 
 interface NavbarProps {
   onToggleSidebar?: () => void;
@@ -21,6 +22,7 @@ interface NavbarProps {
 
 const Navbar = ({ onToggleSidebar }: NavbarProps) => {
   const [isModerator, setIsModerator] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const { user, signOut } = useAuth();
   const { t } = useLanguage();
   const navigate = useNavigate();
@@ -28,6 +30,9 @@ const Navbar = ({ onToggleSidebar }: NavbarProps) => {
   useEffect(() => {
     if (user) {
       checkModeratorStatus();
+      fetchAvatar();
+    } else {
+      setAvatarUrl(null);
     }
   }, [user]);
 
@@ -35,6 +40,12 @@ const Navbar = ({ onToggleSidebar }: NavbarProps) => {
     if (!user) return;
     const { data } = await supabase.rpc('has_role', { _user_id: user.id, _role: 'moderator' });
     setIsModerator(!!data);
+  };
+
+  const fetchAvatar = async () => {
+    if (!user) return;
+    const { data } = await supabase.from("profiles").select("avatar_url").eq("id", user.id).maybeSingle();
+    setAvatarUrl(data?.avatar_url ?? null);
   };
 
   const handleSignOut = async () => {
@@ -114,7 +125,7 @@ const Navbar = ({ onToggleSidebar }: NavbarProps) => {
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" size="icon" className="rounded-full">
                     <Avatar className="w-8 h-8">
-                      <AvatarImage src={undefined} />
+                      <AvatarImage src={getAvatarUrl(avatarUrl)} />
                       <AvatarFallback className="bg-primary text-primary-foreground text-sm">
                         <User className="w-4 h-4" />
                       </AvatarFallback>

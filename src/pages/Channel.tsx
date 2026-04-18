@@ -10,6 +10,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { User, Calendar, Video as VideoIcon, Users, AlertTriangle } from "lucide-react";
 import VideoCard from "@/components/VideoCard";
+import { getAvatarUrl, getBannerUrl, getThumbnailUrl } from "@/lib/defaults";
 
 interface Profile {
   id: string;
@@ -160,15 +161,15 @@ const Channel = () => {
 
       {/* Banner */}
       <div 
-        className="h-48 md:h-64 bg-gradient-to-r from-primary/30 via-accent/20 to-primary/30"
-        style={profile.banner_url ? { backgroundImage: `url(${profile.banner_url})`, backgroundSize: 'cover', backgroundPosition: 'center' } : {}}
+        className="h-48 md:h-64 bg-cover bg-center"
+        style={{ backgroundImage: `url(${getBannerUrl(profile.banner_url)})` }}
       />
 
       {/* Profile Info */}
       <div className="container mx-auto px-4">
         <div className="flex flex-col md:flex-row items-center md:items-end gap-6 -mt-16 mb-8">
           <Avatar className="w-32 h-32 border-4 border-background shadow-xl">
-            <AvatarImage src={profile.avatar_url || undefined} />
+            <AvatarImage src={getAvatarUrl(profile.avatar_url)} />
             <AvatarFallback className="text-4xl">
               <User className="w-16 h-16" />
             </AvatarFallback>
@@ -229,7 +230,7 @@ const Channel = () => {
                   <VideoCard
                     key={video.id}
                     title={video.title}
-                    thumbnail={video.thumbnail_url || "https://images.unsplash.com/photo-1536240478700-b869070f9279?w=800&q=80"}
+                    thumbnail={getThumbnailUrl(video.thumbnail_url)}
                     duration={video.duration || "0:00"}
                     views={formatViews(video.views_count)}
                     author={profile.display_name}
