@@ -26,6 +26,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import ReportVideoDialog from "@/components/ReportVideoDialog";
 import AddToPlaylistDialog from "@/components/AddToPlaylistDialog";
+import { getAvatarUrl, getThumbnailUrl } from "@/lib/defaults";
 
 interface Video {
   id: string;
@@ -313,7 +314,7 @@ const Watch = () => {
               {video.video_url ? (
                 <VideoPlayer
                   src={video.video_url}
-                  poster={video.thumbnail_url || undefined}
+                  poster={getThumbnailUrl(video.thumbnail_url)}
                   className="w-full h-full"
                 />
               ) : (
@@ -385,7 +386,7 @@ const Watch = () => {
                   className="flex items-center gap-3 hover:opacity-80 transition-opacity"
                 >
                   <Avatar className="w-12 h-12 border-2 border-primary/30">
-                    <AvatarImage src={video.profiles.avatar_url || undefined} />
+                    <AvatarImage src={getAvatarUrl(video.profiles.avatar_url)} />
                     <AvatarFallback><User className="w-6 h-6" /></AvatarFallback>
                   </Avatar>
                   <div>
@@ -448,7 +449,7 @@ const Watch = () => {
                   comments.map((comment) => (
                     <div key={comment.id} className="flex gap-3">
                       <Avatar className="w-10 h-10">
-                        <AvatarImage src={comment.profiles.avatar_url || undefined} />
+                        <AvatarImage src={getAvatarUrl(comment.profiles.avatar_url)} />
                         <AvatarFallback><User className="w-4 h-4" /></AvatarFallback>
                       </Avatar>
                       <div className="flex-1">
@@ -491,13 +492,7 @@ const Watch = () => {
                       className="flex gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors"
                     >
                       <div className="w-40 aspect-video rounded-lg overflow-hidden bg-muted flex-shrink-0">
-                        {v.thumbnail_url ? (
-                          <img src={v.thumbnail_url} alt={v.title} className="w-full h-full object-cover" />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center">
-                            <Eye className="w-4 h-4 text-muted-foreground" />
-                          </div>
-                        )}
+                        <img src={getThumbnailUrl(v.thumbnail_url)} alt={v.title} className="w-full h-full object-cover" />
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="font-medium text-sm line-clamp-2">{v.title}</p>
