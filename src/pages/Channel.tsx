@@ -103,11 +103,13 @@ const Channel = () => {
         .eq("subscriber_id", user.id)
         .eq("channel_id", profile.id);
       setIsSubscribed(false);
+      setProfile({ ...profile, subscribers_count: Math.max((profile.subscribers_count || 0) - 1, 0) });
     } else {
       await supabase
         .from("subscriptions")
         .insert({ subscriber_id: user.id, channel_id: profile.id });
       setIsSubscribed(true);
+      setProfile({ ...profile, subscribers_count: (profile.subscribers_count || 0) + 1 });
     }
   };
 
