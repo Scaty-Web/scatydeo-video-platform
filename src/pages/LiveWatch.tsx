@@ -55,7 +55,10 @@ const LiveWatch = () => {
   const [newMessage, setNewMessage] = useState("");
   const [sending, setSending] = useState(false);
   const [chatVisible, setChatVisible] = useState(true);
+  const [liveFrame, setLiveFrame] = useState<string | null>(null);
+  const [frameStale, setFrameStale] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
+  const usernameCache = useRef<Record<string, string>>({});
 
   useEffect(() => {
     if (!id) return;
