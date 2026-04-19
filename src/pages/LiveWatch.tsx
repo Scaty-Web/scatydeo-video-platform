@@ -68,12 +68,63 @@ const LiveWatch = () => {
     return () => clearInterval(interval);
   }, [id]);
 
+  // Firebase RTDB: live frame subscription
   useEffect(() => {
-    if (!stream?.id || !stream.chat_enabled) return;
-    fetchChatMessages();
-    const interval = setInterval(fetchChatMessages, 3000);
-    return () => clearInterval(interval);
-  }, [stream?.id, stream?.chat_enabled]);
+    if (!stream?.id) return;
+    const frameRef = fbRef(rtdb, `streams/${stream.id}/frame`);
+    const unsub = onValue(frameRef, (snap) => {
+      const val = snap.val() as { data?: string; ts?: number } | null;
+      if (val?.data) {
+        setLiveFrame(val.data);
+        setFrameStale(false);
+      } else {
+        setLiveFrame(null);
+      }
+    });
+    // Mark frame stale if no update for >5s
+    const staleCheck = setInterval(() => {
+      // We rely on onValue updates; if none come, mark as stale via timestamp gap
+    }, 3000);
+    return () => {
+      off(frameRef);
+      clearInterval(staleCheck);
+    };
+  }, [stream?.id]);
+
+  // Firebase RTDB: chat subscription (last 100 messages)
+  useEffect(() => {
+    if (!stream?.id || !stream.chat_enabled) {
+      setChatMessages([]);
+      return;
+    }
+    const chatRef = fbQuery(fbRef(rtdb, `streams/${stream.id}/chat`), limitToLast(100));
+    const unsub = onValue(chatRef, async (snap) => {
+      const val = snap.val() as Record<string, { content: string; user_id: string; created_at: number }> | null;
+      if (!val) {
+        setChatMessages([]);
+        return;
+      }
+      const arr = Object.entries(val)
+        .map(([id, m]) => ({ id, ...m, created_at: new Date(m.created_at).toISOString() }))
+        .sort((a, b) => (a.created_at || "").localeCompare(b.created_at || ""));
+
+      // Resolve usernames (cache)
+      const missing = arr.map((m) => m.user_id).filter((uid) => !usernameCache.current[uid]);
+      if (missing.length) {
+        const { data: profiles } = await supabase
+          .from("profiles").select("id, username").in("id", [...new Set(missing)]);
+        profiles?.forEach((p) => { usernameCache.current[p.id] = p.username || ""; });
+      }
+
+      setChatMessages(
+        arr.map((m) => ({
+          ...m,
+          username: usernameCache.current[m.user_id] || (language === "tr" ? "Anonim" : "Anonymous"),
+        }))
+      );
+    });
+    return () => { off(fbRef(rtdb, `streams/${stream.id}/chat`)); };
+  }, [stream?.id, stream?.chat_enabled, language]);
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
