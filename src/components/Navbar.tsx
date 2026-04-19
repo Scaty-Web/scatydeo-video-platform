@@ -64,11 +64,16 @@ const Navbar = ({ onToggleSidebar }: NavbarProps) => {
           >
             <Menu className="w-5 h-5 text-foreground" />
           </button>
-          <Link to="/" className="flex items-center gap-1.5">
+<Link to="/" className="flex items-center gap-1.5">
             <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center">
               <Play className="w-4 h-4 text-primary-foreground fill-current" />
             </div>
             <span className="font-display text-lg font-bold hidden sm:inline">Scatydeo</span>
+            {/* Siyah Kurdele */}
+            <div className="hidden sm:flex flex-col -space-y-0.5">
+              <div className="w-2 h-3 bg-black rounded-t-sm" />
+              <div className="w-2 h-3 bg-black rounded-b-sm transform rotate-12 origin-top" />
+            </div>
           </Link>
         </div>
 
