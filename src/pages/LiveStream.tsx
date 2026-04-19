@@ -84,7 +84,7 @@ const LiveStream = () => {
     }
   };
 
-  const handleSelectVideo = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleSelectVideo = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !videoRef.current) return;
 
@@ -93,8 +93,13 @@ const LiveStream = () => {
     videoRef.current.srcObject = null;
     videoRef.current.src = url;
     videoRef.current.load();
+    try {
+      await videoRef.current.play();
+      setIsPlaying(true);
+    } catch {
+      setIsPlaying(false);
+    }
     setSourceType("video");
-    setIsPlaying(false);
   };
 
   const handleShareScreen = async () => {
@@ -437,6 +442,8 @@ const LiveStream = () => {
               ref={videoRef}
               className="w-full h-full object-contain"
               playsInline
+              autoPlay
+              muted
               onPlay={() => setIsPlaying(true)}
               onPause={() => setIsPlaying(false)}
             />
