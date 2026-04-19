@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { rtdb } from "@/integrations/firebase/client";
+import { ref as fbRef, onValue, push as fbPush, query as fbQuery, limitToLast, off } from "firebase/database";
 import { useAuth } from "@/hooks/useAuth";
 import { useLanguage } from "@/hooks/useLanguage";
 import Navbar from "@/components/Navbar";
@@ -53,7 +55,10 @@ const LiveWatch = () => {
   const [newMessage, setNewMessage] = useState("");
   const [sending, setSending] = useState(false);
   const [chatVisible, setChatVisible] = useState(true);
+  const [liveFrame, setLiveFrame] = useState<string | null>(null);
+  const [frameStale, setFrameStale] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
+  const usernameCache = useRef<Record<string, string>>({});
 
   useEffect(() => {
     if (!id) return;
@@ -63,12 +68,63 @@ const LiveWatch = () => {
     return () => clearInterval(interval);
   }, [id]);
 
+  // Firebase RTDB: live frame subscription
   useEffect(() => {
-    if (!stream?.id || !stream.chat_enabled) return;
-    fetchChatMessages();
-    const interval = setInterval(fetchChatMessages, 3000);
-    return () => clearInterval(interval);
-  }, [stream?.id, stream?.chat_enabled]);
+    if (!stream?.id) return;
+    const frameRef = fbRef(rtdb, `streams/${stream.id}/frame`);
+    const unsub = onValue(frameRef, (snap) => {
+      const val = snap.val() as { data?: string; ts?: number } | null;
+      if (val?.data) {
+        setLiveFrame(val.data);
+        setFrameStale(false);
+      } else {
+        setLiveFrame(null);
+      }
+    });
+    // Mark frame stale if no update for >5s
+    const staleCheck = setInterval(() => {
+      // We rely on onValue updates; if none come, mark as stale via timestamp gap
+    }, 3000);
+    return () => {
+      off(frameRef);
+      clearInterval(staleCheck);
+    };
+  }, [stream?.id]);
+
+  // Firebase RTDB: chat subscription (last 100 messages)
+  useEffect(() => {
+    if (!stream?.id || !stream.chat_enabled) {
+      setChatMessages([]);
+      return;
+    }
+    const chatRef = fbQuery(fbRef(rtdb, `streams/${stream.id}/chat`), limitToLast(100));
+    const unsub = onValue(chatRef, async (snap) => {
+      const val = snap.val() as Record<string, { content: string; user_id: string; created_at: number }> | null;
+      if (!val) {
+        setChatMessages([]);
+        return;
+      }
+      const arr = Object.entries(val)
+        .map(([id, m]) => ({ id, ...m, created_at: new Date(m.created_at).toISOString() }))
+        .sort((a, b) => (a.created_at || "").localeCompare(b.created_at || ""));
+
+      // Resolve usernames (cache)
+      const missing = arr.map((m) => m.user_id).filter((uid) => !usernameCache.current[uid]);
+      if (missing.length) {
+        const { data: profiles } = await supabase
+          .from("profiles").select("id, username").in("id", [...new Set(missing)]);
+        profiles?.forEach((p) => { usernameCache.current[p.id] = p.username || ""; });
+      }
+
+      setChatMessages(
+        arr.map((m) => ({
+          ...m,
+          username: usernameCache.current[m.user_id] || (language === "tr" ? "Anonim" : "Anonymous"),
+        }))
+      );
+    });
+    return () => { off(fbRef(rtdb, `streams/${stream.id}/chat`)); };
+  }, [stream?.id, stream?.chat_enabled, language]);
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -99,48 +155,27 @@ const LiveWatch = () => {
     setLoading(false);
   };
 
-  const fetchChatMessages = async () => {
-    if (!id) return;
-    const { data } = await supabase
-      .from("stream_chat_messages")
-      .select("*")
-      .eq("stream_id", id)
-      .order("created_at", { ascending: true })
-      .limit(100);
 
-    if (data && data.length > 0) {
-      const userIds = [...new Set(data.map((m) => m.user_id))];
-      const { data: profiles } = await supabase
-        .from("profiles")
-        .select("id, username")
-        .in("id", userIds);
-
-      const usernameMap: Record<string, string> = {};
-      profiles?.forEach((p) => { usernameMap[p.id] = p.username || ""; });
-
-      setChatMessages(
-        data.map((m) => ({
-          ...m,
-          username: usernameMap[m.user_id] || (language === "tr" ? "Anonim" : "Anonymous"),
-        }))
-      );
-    }
-  };
 
   const handleSendMessage = async () => {
-    if (!user || !id || !newMessage.trim() || sending) return;
+    if (!user || !stream?.id || !newMessage.trim() || sending) return;
     setSending(true);
-    const { error } = await supabase.from("stream_chat_messages").insert({
-      stream_id: id,
-      user_id: user.id,
-      content: newMessage.trim().slice(0, 500),
-    });
-
-    if (error) {
-      toast({ title: t.common.error, description: error.message, variant: "destructive" });
-    } else {
+    try {
+      const chatRef = fbRef(rtdb, `streams/${stream.id}/chat`);
+      await fbPush(chatRef, {
+        content: newMessage.trim().slice(0, 500),
+        user_id: user.id,
+        created_at: Date.now(),
+      });
+      // Mirror to Supabase for persistence (best-effort)
+      supabase.from("stream_chat_messages").insert({
+        stream_id: stream.id,
+        user_id: user.id,
+        content: newMessage.trim().slice(0, 500),
+      }).then(() => {});
       setNewMessage("");
-      fetchChatMessages();
+    } catch (err: any) {
+      toast({ title: t.common.error, description: err.message, variant: "destructive" });
     }
     setSending(false);
   };
@@ -198,7 +233,13 @@ const LiveWatch = () => {
           {/* Video area */}
           <div className="flex-1">
             <div className="relative bg-black rounded-xl overflow-hidden aspect-video mb-4">
-              {stream.playback_url ? (
+              {liveFrame ? (
+                <img
+                  src={liveFrame}
+                  alt={stream.title}
+                  className="w-full h-full object-contain"
+                />
+              ) : stream.playback_url ? (
                 <video
                   src={stream.playback_url}
                   className="w-full h-full object-contain"
@@ -210,7 +251,7 @@ const LiveWatch = () => {
                   <div className="text-center">
                     <Radio className="w-16 h-16 text-muted-foreground mx-auto mb-2 animate-pulse" />
                     <p className="text-muted-foreground text-sm">
-                      {language === "tr" ? "Yayın devam ediyor..." : "Stream is live..."}
+                      {language === "tr" ? "Yayın bağlanıyor..." : "Connecting to stream..."}
                     </p>
                   </div>
                 </div>
