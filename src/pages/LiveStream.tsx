@@ -56,6 +56,8 @@ const LiveStream = () => {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const recordedChunksRef = useRef<Blob[]>([]);
   const recordedBlobRef = useRef<Blob | null>(null);
+  const broadcastIntervalRef = useRef<number | null>(null);
+  const broadcastCanvasRef = useRef<HTMLCanvasElement | null>(null);
 
   // Clean up on unmount
   useEffect(() => {
