@@ -246,6 +246,53 @@ const LiveStream = () => {
     }
 
     setIsStreaming(true);
+    startBroadcast(streamData.id);
+  };
+
+  // Broadcast video frames to Firebase RTDB at ~2fps
+  const startBroadcast = (sid: string) => {
+    if (!videoRef.current) return;
+    const canvas = broadcastCanvasRef.current ?? document.createElement("canvas");
+    broadcastCanvasRef.current = canvas;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    const frameRef = fbRef(rtdb, `streams/${sid}/frame`);
+    const metaRef = fbRef(rtdb, `streams/${sid}/meta`);
+    fbSet(metaRef, { isLive: true, startedAt: serverTimestamp(), title: title.trim() });
+
+    const tick = () => {
+      const v = videoRef.current;
+      if (!v || v.readyState < 2) return;
+      const w = v.videoWidth || 640;
+      const h = v.videoHeight || 360;
+      const scale = Math.min(1, 640 / w);
+      canvas.width = Math.floor(w * scale);
+      canvas.height = Math.floor(h * scale);
+      try {
+        ctx.drawImage(v, 0, 0, canvas.width, canvas.height);
+        const dataUrl = canvas.toDataURL("image/jpeg", 0.6);
+        fbSet(frameRef, { data: dataUrl, ts: Date.now() });
+      } catch {
+        // skip frame
+      }
+    };
+    broadcastIntervalRef.current = window.setInterval(tick, 500);
+  };
+
+  const stopBroadcast = async (sid: string | null) => {
+    if (broadcastIntervalRef.current) {
+      clearInterval(broadcastIntervalRef.current);
+      broadcastIntervalRef.current = null;
+    }
+    if (sid) {
+      try {
+        await fbRemove(fbRef(rtdb, `streams/${sid}/frame`));
+        await fbSet(fbRef(rtdb, `streams/${sid}/meta`), { isLive: false, endedAt: Date.now() });
+      } catch {
+        // ignore
+      }
+    }
   };
 
   const handleEndStream = async () => {
