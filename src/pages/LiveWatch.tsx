@@ -233,7 +233,13 @@ const LiveWatch = () => {
           {/* Video area */}
           <div className="flex-1">
             <div className="relative bg-black rounded-xl overflow-hidden aspect-video mb-4">
-              {stream.playback_url ? (
+              {liveFrame ? (
+                <img
+                  src={liveFrame}
+                  alt={stream.title}
+                  className="w-full h-full object-contain"
+                />
+              ) : stream.playback_url ? (
                 <video
                   src={stream.playback_url}
                   className="w-full h-full object-contain"
@@ -245,7 +251,7 @@ const LiveWatch = () => {
                   <div className="text-center">
                     <Radio className="w-16 h-16 text-muted-foreground mx-auto mb-2 animate-pulse" />
                     <p className="text-muted-foreground text-sm">
-                      {language === "tr" ? "Yayın devam ediyor..." : "Stream is live..."}
+                      {language === "tr" ? "Yayın bağlanıyor..." : "Connecting to stream..."}
                     </p>
                   </div>
                 </div>
