@@ -305,6 +305,8 @@ const LiveStream = () => {
       mediaRecorderRef.current.stop();
     }
 
+    await stopBroadcast(streamId);
+
     // Update stream record
     if (streamId) {
       await supabase.from("streams").update({
