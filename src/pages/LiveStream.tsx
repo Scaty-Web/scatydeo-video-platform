@@ -63,8 +63,12 @@ const LiveStream = () => {
   useEffect(() => {
     return () => {
       stopScreenShare();
-      // If streaming, end it
+      if (broadcastIntervalRef.current) {
+        clearInterval(broadcastIntervalRef.current);
+        broadcastIntervalRef.current = null;
+      }
       if (streamId) {
+        stopBroadcast(streamId);
         supabase.from("streams").update({ is_live: false, ended_at: new Date().toISOString() }).eq("id", streamId).then(() => {});
       }
     };
