@@ -1,6 +1,8 @@
 import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { rtdb } from "@/integrations/firebase/client";
+import { ref as fbRef, set as fbSet, remove as fbRemove, onValue, push as fbPush, serverTimestamp } from "firebase/database";
 import { useAuth } from "@/hooks/useAuth";
 import { useLanguage } from "@/hooks/useLanguage";
 import Navbar from "@/components/Navbar";
