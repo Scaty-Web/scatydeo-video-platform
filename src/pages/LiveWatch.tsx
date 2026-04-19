@@ -155,33 +155,7 @@ const LiveWatch = () => {
     setLoading(false);
   };
 
-  const fetchChatMessages = async () => {
-    if (!id) return;
-    const { data } = await supabase
-      .from("stream_chat_messages")
-      .select("*")
-      .eq("stream_id", id)
-      .order("created_at", { ascending: true })
-      .limit(100);
 
-    if (data && data.length > 0) {
-      const userIds = [...new Set(data.map((m) => m.user_id))];
-      const { data: profiles } = await supabase
-        .from("profiles")
-        .select("id, username")
-        .in("id", userIds);
-
-      const usernameMap: Record<string, string> = {};
-      profiles?.forEach((p) => { usernameMap[p.id] = p.username || ""; });
-
-      setChatMessages(
-        data.map((m) => ({
-          ...m,
-          username: usernameMap[m.user_id] || (language === "tr" ? "Anonim" : "Anonymous"),
-        }))
-      );
-    }
-  };
 
   const handleSendMessage = async () => {
     if (!user || !stream?.id || !newMessage.trim() || sending) return;
