@@ -184,19 +184,24 @@ const LiveWatch = () => {
   };
 
   const handleSendMessage = async () => {
-    if (!user || !id || !newMessage.trim() || sending) return;
+    if (!user || !stream?.id || !newMessage.trim() || sending) return;
     setSending(true);
-    const { error } = await supabase.from("stream_chat_messages").insert({
-      stream_id: id,
-      user_id: user.id,
-      content: newMessage.trim().slice(0, 500),
-    });
-
-    if (error) {
-      toast({ title: t.common.error, description: error.message, variant: "destructive" });
-    } else {
+    try {
+      const chatRef = fbRef(rtdb, `streams/${stream.id}/chat`);
+      await fbPush(chatRef, {
+        content: newMessage.trim().slice(0, 500),
+        user_id: user.id,
+        created_at: Date.now(),
+      });
+      // Mirror to Supabase for persistence (best-effort)
+      supabase.from("stream_chat_messages").insert({
+        stream_id: stream.id,
+        user_id: user.id,
+        content: newMessage.trim().slice(0, 500),
+      }).then(() => {});
       setNewMessage("");
-      fetchChatMessages();
+    } catch (err: any) {
+      toast({ title: t.common.error, description: err.message, variant: "destructive" });
     }
     setSending(false);
   };
