@@ -576,7 +576,7 @@ const SwitchFeed = () => {
             className="min-h-[100px]"
           />
           <Button onClick={submitReport} variant="destructive" disabled={!reportReason.trim()}>
-            {t.common.send ?? "Send"}
+            {t.switch.sendComment}
           </Button>
         </DialogContent>
       </Dialog>
