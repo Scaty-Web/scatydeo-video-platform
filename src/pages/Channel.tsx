@@ -238,6 +238,7 @@ const Channel = () => {
         <Tabs defaultValue="videos" className="mb-12">
           <TabsList className="bg-muted/30">
             <TabsTrigger value="videos">{t.channel.videos}</TabsTrigger>
+            <TabsTrigger value="switches">{t.switch.switches}</TabsTrigger>
             <TabsTrigger value="about">{t.channel.aboutTab}</TabsTrigger>
           </TabsList>
 
@@ -260,6 +261,39 @@ const Channel = () => {
                     delay={index * 0.1}
                     videoId={video.id}
                   />
+                ))}
+              </div>
+            )}
+          </TabsContent>
+
+          <TabsContent value="switches" className="mt-6">
+            {switches.length === 0 ? (
+              <div className="text-center py-16">
+                <p className="text-muted-foreground">{t.switch.empty}</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+                {switches.map((s) => (
+                  <a
+                    key={s.id}
+                    href={`/switch/${s.id}`}
+                    className="block group"
+                  >
+                    <div className="relative aspect-[9/16] rounded-lg overflow-hidden bg-muted">
+                      <img
+                        src={s.cover_url || "/placeholder.svg"}
+                        alt={s.title}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                        onError={(e) => {
+                          (e.currentTarget as HTMLImageElement).src = "/placeholder.svg";
+                        }}
+                      />
+                      <div className="absolute bottom-0 left-0 right-0 p-2 bg-gradient-to-t from-black/80 to-transparent text-white">
+                        <p className="text-xs line-clamp-2">{s.title}</p>
+                        <p className="text-[10px] text-white/70">{formatViews(s.views_count)} {t.common.views}</p>
+                      </div>
+                    </div>
+                  </a>
                 ))}
               </div>
             )}
