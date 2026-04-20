@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import LanguageSwitcher from "./LanguageSwitcher";
 import { getAvatarUrl } from "@/lib/defaults";
+import SwitchLogo from "./SwitchLogo";
 
 interface NavbarProps {
   onToggleSidebar?: () => void;
@@ -122,13 +123,32 @@ const Navbar = ({ onToggleSidebar }: NavbarProps) => {
 
           <LanguageSwitcher />
 
+          {/* Switch shortcut (always visible) */}
+          <Link to="/switch">
+            <Button variant="ghost" size="icon" className="rounded-full" title={t.switch.title}>
+              <SwitchLogo size={22} />
+            </Button>
+          </Link>
+
           {user ? (
             <>
-              <Link to="/upload">
-                <Button variant="ghost" size="icon" className="rounded-full" title={t.nav.uploadVideo}>
-                  <Upload className="w-5 h-5" />
-                </Button>
-              </Link>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" className="rounded-full" title={t.nav.uploadVideo}>
+                    <Upload className="w-5 h-5" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-44">
+                  <DropdownMenuItem onClick={() => navigate("/upload")}>
+                    <Upload className="w-4 h-4 mr-2" />
+                    {t.nav.uploadVideo}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate("/upload/switch")}>
+                    <SwitchLogo size={16} className="mr-2" />
+                    {t.switch.uploadBtn}
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
               <Link to="/notifications">
                 <Button variant="ghost" size="icon" className="rounded-full" title={t.nav.notifications}>
                   <Bell className="w-5 h-5" />
