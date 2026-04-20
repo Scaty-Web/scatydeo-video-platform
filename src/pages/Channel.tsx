@@ -32,12 +32,22 @@ interface Video {
   created_at: string;
 }
 
+interface SwitchRow {
+  id: string;
+  title: string;
+  cover_url: string | null;
+  views_count: number;
+  likes_count: number;
+  created_at: string;
+}
+
 const Channel = () => {
   const { username } = useParams();
   const { user } = useAuth();
   const { t, language } = useLanguage();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [videos, setVideos] = useState<Video[]>([]);
+  const [switches, setSwitches] = useState<SwitchRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [isSubscribed, setIsSubscribed] = useState(false);
 
@@ -63,6 +73,7 @@ const Channel = () => {
     if (!error && profileData) {
       setProfile(profileData);
       fetchVideos(profileData.id);
+      fetchSwitches(profileData.id);
     }
     setLoading(false);
   };
@@ -78,6 +89,16 @@ const Channel = () => {
     if (data) {
       setVideos(data);
     }
+  };
+
+  const fetchSwitches = async (userId: string) => {
+    const { data } = await supabase
+      .from("switches")
+      .select("id, title, cover_url, views_count, likes_count, created_at")
+      .eq("user_id", userId)
+      .eq("is_public", true)
+      .order("created_at", { ascending: false });
+    if (data) setSwitches(data);
   };
 
   const checkSubscription = async () => {
