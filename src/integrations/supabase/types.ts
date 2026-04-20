@@ -381,6 +381,156 @@ export type Database = {
           },
         ]
       }
+      switch_comments: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          switch_id: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          switch_id: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          switch_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "switch_comments_switch_id_fkey"
+            columns: ["switch_id"]
+            isOneToOne: false
+            referencedRelation: "switches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      switch_likes: {
+        Row: {
+          created_at: string
+          id: string
+          switch_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          switch_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          switch_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "switch_likes_switch_id_fkey"
+            columns: ["switch_id"]
+            isOneToOne: false
+            referencedRelation: "switches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      switch_reports: {
+        Row: {
+          created_at: string
+          id: string
+          reason: string
+          reporter_id: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string | null
+          switch_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          reason: string
+          reporter_id: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string | null
+          switch_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          reason?: string
+          reporter_id?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string | null
+          switch_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "switch_reports_switch_id_fkey"
+            columns: ["switch_id"]
+            isOneToOne: false
+            referencedRelation: "switches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      switches: {
+        Row: {
+          comments_count: number
+          cover_url: string | null
+          created_at: string
+          description: string | null
+          duration_seconds: number | null
+          id: string
+          is_public: boolean
+          likes_count: number
+          title: string
+          updated_at: string
+          user_id: string
+          video_url: string
+          views_count: number
+        }
+        Insert: {
+          comments_count?: number
+          cover_url?: string | null
+          created_at?: string
+          description?: string | null
+          duration_seconds?: number | null
+          id?: string
+          is_public?: boolean
+          likes_count?: number
+          title: string
+          updated_at?: string
+          user_id: string
+          video_url: string
+          views_count?: number
+        }
+        Update: {
+          comments_count?: number
+          cover_url?: string | null
+          created_at?: string
+          description?: string | null
+          duration_seconds?: number | null
+          id?: string
+          is_public?: boolean
+          likes_count?: number
+          title?: string
+          updated_at?: string
+          user_id?: string
+          video_url?: string
+          views_count?: number
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string | null
@@ -606,6 +756,10 @@ export type Database = {
           reason: string
         }[]
       }
+      get_switch_like_count: {
+        Args: { target_switch_id: string }
+        Returns: number
+      }
       get_video_comments: {
         Args: { target_video_id: string }
         Returns: {
@@ -634,9 +788,17 @@ export type Database = {
         }
         Returns: boolean
       }
+      has_user_liked_switch: {
+        Args: { target_switch_id: string }
+        Returns: boolean
+      }
       has_user_liked_video: {
         Args: { target_video_id: string }
         Returns: boolean
+      }
+      increment_switch_view_count: {
+        Args: { target_switch_id: string }
+        Returns: undefined
       }
       increment_view_count: {
         Args: { target_video_id: string }
