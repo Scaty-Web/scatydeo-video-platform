@@ -201,6 +201,14 @@ const Upload = () => {
             <p className="text-muted-foreground mt-2">
               {t.upload.subtitle}
             </p>
+            <Button
+              variant="outline"
+              className="mt-4"
+              onClick={() => navigate("/upload/switch")}
+              type="button"
+            >
+              {t.switch.uploadBtn} →
+            </Button>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
