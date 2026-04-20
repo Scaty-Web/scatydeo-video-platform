@@ -27,6 +27,8 @@ import V2Welcome from "./pages/V2Welcome";
 import LiveStream from "./pages/LiveStream";
 import LiveStreams from "./pages/LiveStreams";
 import LiveWatch from "./pages/LiveWatch";
+import SwitchFeed from "./pages/SwitchFeed";
+import SwitchUpload from "./pages/SwitchUpload";
 
 const queryClient = new QueryClient();
 
@@ -66,6 +68,9 @@ const AppRoutes = () => {
       <Route path="/stream" element={<LiveStream />} />
       <Route path="/lives" element={<LiveStreams />} />
       <Route path="/live/:id" element={<LiveWatch />} />
+      <Route path="/switch" element={<SwitchFeed />} />
+      <Route path="/switch/:id" element={<SwitchFeed />} />
+      <Route path="/upload/switch" element={<SwitchUpload />} />
       <Route path="/banned" element={<Banned />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
