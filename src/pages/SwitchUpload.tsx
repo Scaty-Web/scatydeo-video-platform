@@ -32,21 +32,34 @@ const SwitchUpload = () => {
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
 
-  const validateVideo = (file: File): Promise<{ duration: number; vertical: boolean }> => {
-    return new Promise((resolve, reject) => {
+  const validateVideo = (
+    file: File
+  ): Promise<{ duration: number; vertical: boolean; unknown: boolean }> => {
+    return new Promise((resolve) => {
       const url = URL.createObjectURL(file);
       const video = document.createElement("video");
       video.preload = "metadata";
       video.src = url;
+      const cleanup = () => URL.revokeObjectURL(url);
+      const timeout = setTimeout(() => {
+        // Browser couldn't read metadata (e.g. some .MOV/HEVC). Allow upload.
+        cleanup();
+        resolve({ duration: 0, vertical: true, unknown: true });
+      }, 4000);
       video.onloadedmetadata = () => {
-        const vertical = video.videoHeight > video.videoWidth;
-        const dur = video.duration;
-        URL.revokeObjectURL(url);
-        resolve({ duration: dur, vertical });
+        clearTimeout(timeout);
+        const w = video.videoWidth || 0;
+        const h = video.videoHeight || 0;
+        const vertical = h >= w; // also accept square
+        const dur = isFinite(video.duration) ? video.duration : 0;
+        cleanup();
+        resolve({ duration: dur, vertical, unknown: w === 0 || h === 0 });
       };
       video.onerror = () => {
-        URL.revokeObjectURL(url);
-        reject(new Error("invalid video"));
+        clearTimeout(timeout);
+        cleanup();
+        // Don't block upload on metadata-read failure
+        resolve({ duration: 0, vertical: true, unknown: true });
       };
     });
   };
@@ -58,21 +71,17 @@ const SwitchUpload = () => {
       toast({ title: t.switch.tooLargeFile, variant: "destructive" });
       return;
     }
-    try {
-      const { duration: dur, vertical } = await validateVideo(file);
-      if (!vertical) {
-        toast({ title: t.switch.notVertical, variant: "destructive" });
-        return;
-      }
-      if (dur > MAX_DURATION + 0.5) {
-        toast({ title: t.switch.tooLong, variant: "destructive" });
-        return;
-      }
-      setDuration(dur);
-      setVideoFile(file);
-    } catch {
-      toast({ title: t.switch.uploadErr, variant: "destructive" });
+    const { duration: dur, vertical, unknown } = await validateVideo(file);
+    if (!unknown && !vertical) {
+      toast({ title: t.switch.notVertical, variant: "destructive" });
+      return;
     }
+    if (!unknown && dur > MAX_DURATION + 0.5) {
+      toast({ title: t.switch.tooLong, variant: "destructive" });
+      return;
+    }
+    setDuration(dur);
+    setVideoFile(file);
   };
 
   const handleCoverChange = (e: React.ChangeEvent<HTMLInputElement>) => {
