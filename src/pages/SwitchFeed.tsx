@@ -99,11 +99,9 @@ const SwitchFeed = () => {
       setLoading(true);
       const { data, error } = await supabase
         .from("switches")
-        .select(`
-          id, user_id, title, description, video_url, cover_url,
-          views_count, likes_count, comments_count, created_at,
-          profiles:user_id ( username, display_name, avatar_url )
-        `)
+        .select(
+          "id, user_id, title, description, video_url, cover_url, views_count, likes_count, comments_count, created_at"
+        )
         .eq("is_public", true)
         .order("created_at", { ascending: false })
         .limit(50);
@@ -123,15 +121,25 @@ const SwitchFeed = () => {
             // fetch the specific one and prepend
             const { data: one } = await supabase
               .from("switches")
-              .select(`
-                id, user_id, title, description, video_url, cover_url,
-                views_count, likes_count, comments_count, created_at,
-                profiles:user_id ( username, display_name, avatar_url )
-              `)
+              .select(
+                "id, user_id, title, description, video_url, cover_url, views_count, likes_count, comments_count, created_at"
+              )
               .eq("id", id)
               .maybeSingle();
             if (one) list = [one as unknown as SwitchItem, ...list];
           }
+        }
+        // Hydrate author profiles separately (no FK between switches and profiles)
+        const userIds = Array.from(new Set(list.map((s) => s.user_id)));
+        if (userIds.length) {
+          const { data: profs } = await supabase
+            .from("profiles")
+            .select("id, username, display_name, avatar_url")
+            .in("id", userIds);
+          const pmap = new Map((profs ?? []).map((p: any) => [p.id, p]));
+          list.forEach((s) => {
+            s.profiles = (pmap.get(s.user_id) as any) ?? null;
+          });
         }
         setItems(list);
       }
