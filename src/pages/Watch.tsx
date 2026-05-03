@@ -21,12 +21,14 @@ import {
   Sparkles,
   Shield,
   ExternalLink,
-  Loader2
+  Loader2,
+  Download
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import ReportVideoDialog from "@/components/ReportVideoDialog";
 import AddToPlaylistDialog from "@/components/AddToPlaylistDialog";
 import { getAvatarUrl, getThumbnailUrl } from "@/lib/defaults";
+import { downloadFile, safeFilename, extFromUrl } from "@/lib/download";
 
 interface Video {
   id: string;
@@ -353,6 +355,22 @@ const Watch = () => {
                 <Button variant="outline" size="sm" className="gap-2">
                   <Share2 className="w-4 h-4" />
                   {t.common.share}
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-2"
+                  onClick={() => {
+                    if (!video.video_url) return;
+                    downloadFile(
+                      video.video_url,
+                      safeFilename(video.title, extFromUrl(video.video_url, "mp4"))
+                    );
+                    toast({ title: language === "tr" ? "İndiriliyor..." : "Downloading..." });
+                  }}
+                >
+                  <Download className="w-4 h-4" />
+                  {language === "tr" ? "İndir" : "Download"}
                 </Button>
                 <Button
                   variant="outline"

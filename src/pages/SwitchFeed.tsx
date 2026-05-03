@@ -18,10 +18,12 @@ import {
   Send,
   ArrowLeft,
   Loader2,
+  Download,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { getAvatarUrl } from "@/lib/defaults";
 import defaultCover from "@/assets/switch-default-cover.png";
+import { downloadFile, safeFilename, extFromUrl } from "@/lib/download";
 import {
   Dialog,
   DialogContent,
@@ -512,6 +514,22 @@ const SwitchFeed = () => {
                   >
                     <div className="w-12 h-12 rounded-full bg-primary flex items-center justify-center shadow-glow">
                       <UploadIcon className="w-6 h-6" />
+                    </div>
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      downloadFile(
+                        s.video_url,
+                        safeFilename(s.title, extFromUrl(s.video_url, "mp4"))
+                      );
+                      toast({ title: language === "tr" ? "İndiriliyor..." : "Downloading..." });
+                    }}
+                    className="flex flex-col items-center"
+                    aria-label="download"
+                  >
+                    <div className="w-12 h-12 rounded-full bg-black/40 backdrop-blur flex items-center justify-center">
+                      <Download className="w-6 h-6" />
                     </div>
                   </button>
                 </div>

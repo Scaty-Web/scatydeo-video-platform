@@ -1,4 +1,4 @@
-import { Home, Flame, Settings, Flag, Upload, ListVideo, Info, Radio } from "lucide-react";
+import { Home, Flame, Settings, Flag, Upload, ListVideo, Info, Radio, Newspaper } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useLanguage } from "@/hooks/useLanguage";
@@ -17,6 +17,7 @@ const Sidebar = ({ collapsed = false }: SidebarProps) => {
     { icon: Home, label: t.nav.home, path: "/" },
     { icon: Flame, label: language === "tr" ? "Trendler" : "Trending", path: "/trending" },
     { icon: Radio, label: language === "tr" ? "Canlı Yayınlar" : "Live Streams", path: "/lives" },
+    { icon: Newspaper, label: language === "tr" ? "Haberler" : "News", path: "/news" },
   ];
 
   const userItems = user
