@@ -29,6 +29,7 @@ import LiveStreams from "./pages/LiveStreams";
 import LiveWatch from "./pages/LiveWatch";
 import SwitchFeed from "./pages/SwitchFeed";
 import SwitchUpload from "./pages/SwitchUpload";
+import News from "./pages/News";
 
 const queryClient = new QueryClient();
 
@@ -71,6 +72,7 @@ const AppRoutes = () => {
       <Route path="/switch" element={<SwitchFeed />} />
       <Route path="/switch/:id" element={<SwitchFeed />} />
       <Route path="/upload/switch" element={<SwitchUpload />} />
+      <Route path="/news" element={<News />} />
       <Route path="/banned" element={<Banned />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
