@@ -70,19 +70,6 @@ const Navbar = ({ onToggleSidebar }: NavbarProps) => {
               <Play className="w-4 h-4 text-primary-foreground fill-current" />
             </div>
             <span className="font-display text-lg font-bold hidden sm:inline">Scatydeo</span>
-            {/* Siyah Kurdele - Yas Kurdelesi */}
-            <div className="hidden sm:flex items-start ml-0.5">
-              <div className="relative w-2.5 h-6">
-                {/* Sol kanat */}
-                <div className="absolute left-0 top-0 w-1.5 h-3.5 bg-black rounded-t-sm transform -rotate-12 origin-bottom-right" />
-                <div className="absolute left-0 bottom-0 w-1.5 h-3.5 bg-black transform rotate-12 origin-top-right" />
-                {/* Sağ kanat */}
-                <div className="absolute right-0 top-0 w-1.5 h-3.5 bg-black rounded-t-sm transform rotate-12 origin-bottom-left" />
-                <div className="absolute right-0 bottom-0 w-1.5 h-3.5 bg-black transform -rotate-12 origin-top-left" />
-                {/* Orta düğüm */}
-                <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-2 h-1.5 bg-black rounded-sm" />
-              </div>
-            </div>
           </Link>
         </div>
 
