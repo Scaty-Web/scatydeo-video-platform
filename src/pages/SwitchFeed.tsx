@@ -376,7 +376,22 @@ const SwitchFeed = () => {
           <span className="text-white font-bold tracking-wide">{t.switch.title}</span>
         </div>
         <button
-          onClick={() => setMuted((m) => !m)}
+          onClick={() => {
+            const next = !muted;
+            setMuted(next);
+            // Apply synchronously to the active video within the user gesture
+            // so browsers actually unmute and audio plays.
+            if (active) {
+              const v = videoRefs.current[active.id];
+              if (v) {
+                v.muted = next;
+                v.volume = 1;
+                if (!next) {
+                  v.play().catch(() => {});
+                }
+              }
+            }
+          }}
           className="p-2 rounded-full bg-black/40 backdrop-blur text-white"
           aria-label="mute"
         >
