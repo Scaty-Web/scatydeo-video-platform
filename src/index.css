@@ -50,6 +50,29 @@
     /* Shadows */
     --shadow-glow: 0 0 30px hsl(270 100% 60% / 0.3);
     --shadow-card: 0 8px 32px hsl(0 0% 0% / 0.5);
+
+    /* ---- Material 3 tokens (Scatydeo neon adaptation) ---- */
+    --m3-surface: 0 0% 6%;
+    --m3-surface-container-lowest: 0 0% 4%;
+    --m3-surface-container-low: 0 0% 8%;
+    --m3-surface-container: 0 0% 10%;
+    --m3-surface-container-high: 0 0% 13%;
+    --m3-surface-container-highest: 0 0% 16%;
+    --m3-on-surface: 270 100% 98%;
+    --m3-on-surface-variant: 270 10% 70%;
+    --m3-outline: 270 30% 25%;
+    --m3-outline-variant: 270 30% 18%;
+    --m3-state-layer: 270 100% 70%;
+
+    --m3-elev-1: 0 1px 2px hsl(0 0% 0% / 0.6), 0 1px 3px 1px hsl(0 0% 0% / 0.35);
+    --m3-elev-2: 0 1px 2px hsl(0 0% 0% / 0.55), 0 2px 6px 2px hsl(0 0% 0% / 0.35);
+    --m3-elev-3: 0 4px 8px 3px hsl(0 0% 0% / 0.35), 0 1px 3px hsl(0 0% 0% / 0.5);
+
+    --m3-shape-xs: 0.25rem;
+    --m3-shape-sm: 0.5rem;
+    --m3-shape-md: 0.75rem;
+    --m3-shape-lg: 1rem;
+    --m3-shape-xl: 1.75rem;
   }
 
   * {
@@ -114,4 +137,56 @@
   background: var(--gradient-primary);
   z-index: -1;
   opacity: 0.5;
+}
+
+/* ---- Material 3 utility classes ---- */
+@layer components {
+  .m3-surface {
+    background-color: hsl(var(--m3-surface-container));
+    color: hsl(var(--m3-on-surface));
+    border-radius: var(--m3-shape-lg);
+    box-shadow: var(--m3-elev-1);
+    border: 1px solid hsl(var(--m3-outline-variant));
+  }
+  .m3-surface-high {
+    background-color: hsl(var(--m3-surface-container-high));
+    color: hsl(var(--m3-on-surface));
+    border-radius: var(--m3-shape-lg);
+    box-shadow: var(--m3-elev-2);
+    border: 1px solid hsl(var(--m3-outline-variant));
+  }
+  .m3-state-layer {
+    position: relative;
+    isolation: isolate;
+    transition: background-color .18s ease;
+  }
+  .m3-state-layer::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: hsl(var(--m3-state-layer) / 0);
+    transition: background-color .18s ease;
+    pointer-events: none;
+    z-index: 0;
+  }
+  .m3-state-layer:hover::after { background: hsl(var(--m3-state-layer) / 0.08); }
+  .m3-state-layer:focus-visible::after { background: hsl(var(--m3-state-layer) / 0.12); }
+  .m3-state-layer:active::after { background: hsl(var(--m3-state-layer) / 0.16); }
+  .m3-state-layer > * { position: relative; z-index: 1; }
+
+  .m3-fab {
+    @apply inline-flex items-center justify-center gap-2 h-14 px-5 font-medium;
+    background: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--accent)));
+    color: hsl(var(--primary-foreground));
+    border-radius: var(--m3-shape-lg);
+    box-shadow: var(--m3-elev-3);
+  }
+
+  .m3-chip {
+    @apply inline-flex items-center gap-1.5 h-8 px-3 text-xs font-medium rounded-full;
+    background: hsl(var(--m3-surface-container-high));
+    border: 1px solid hsl(var(--m3-outline));
+    color: hsl(var(--m3-on-surface));
+  }
 }
