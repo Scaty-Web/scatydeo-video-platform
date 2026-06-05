@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Play, Search, Menu, Bell, User, Settings, LogOut, Upload, Shield } from "lucide-react";
+import { Play, Search, Menu, Bell, User, Settings, LogOut, Upload, Shield, SlidersHorizontal } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
@@ -16,6 +16,7 @@ import {
 import LanguageSwitcher from "./LanguageSwitcher";
 import { getAvatarUrl } from "@/lib/defaults";
 import SwitchLogo from "./SwitchLogo";
+import ModerationDialog from "./ModerationDialog";
 
 interface NavbarProps {
   onToggleSidebar?: () => void;
@@ -23,6 +24,8 @@ interface NavbarProps {
 
 const Navbar = ({ onToggleSidebar }: NavbarProps) => {
   const [isModerator, setIsModerator] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [modOpen, setModOpen] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const { user, signOut } = useAuth();
   const { t } = useLanguage();
@@ -39,8 +42,12 @@ const Navbar = ({ onToggleSidebar }: NavbarProps) => {
 
   const checkModeratorStatus = async () => {
     if (!user) return;
-    const { data } = await supabase.rpc('has_role', { _user_id: user.id, _role: 'moderator' });
-    setIsModerator(!!data);
+    const [{ data: mod }, { data: adm }] = await Promise.all([
+      supabase.rpc('has_role', { _user_id: user.id, _role: 'moderator' }),
+      supabase.rpc('has_role', { _user_id: user.id, _role: 'admin' }),
+    ]);
+    setIsModerator(!!mod);
+    setIsAdmin(!!adm);
   };
 
   const fetchAvatar = async () => {
@@ -107,6 +114,26 @@ const Navbar = ({ onToggleSidebar }: NavbarProps) => {
           >
             <Search className="w-5 h-5" />
           </button>
+
+          {/* MOD button: only for admins/moderators */}
+          {user && (isModerator || isAdmin) && (
+            <button
+              onClick={() => setModOpen(true)}
+              className="m3-state-layer px-2.5 h-8 rounded-full text-xs font-bold tracking-wider bg-primary/20 text-primary border border-primary/40 hover:bg-primary/30"
+              title="Moderation"
+            >
+              MOD
+            </button>
+          )}
+
+          {/* Manage my videos */}
+          {user && (
+            <Link to="/manage/videos">
+              <Button variant="ghost" size="icon" className="rounded-full" title={t.nav.uploadVideo}>
+                <SlidersHorizontal className="w-5 h-5" />
+              </Button>
+            </Link>
+          )}
 
           <LanguageSwitcher />
 
@@ -184,6 +211,7 @@ const Navbar = ({ onToggleSidebar }: NavbarProps) => {
           )}
         </div>
       </div>
+      <ModerationDialog open={modOpen} onOpenChange={setModOpen} />
     </nav>
   );
 };
