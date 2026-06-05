@@ -22,7 +22,9 @@ import {
   Shield,
   ExternalLink,
   Loader2,
-  Download
+  Download,
+  CornerDownRight,
+  Send
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import ReportVideoDialog from "@/components/ReportVideoDialog";
@@ -53,6 +55,7 @@ interface Comment {
   content: string;
   created_at: string;
   user_id: string;
+  parent_id: string | null;
   profiles: {
     username: string;
     display_name: string;
@@ -85,6 +88,8 @@ const Watch = () => {
   const [trendingVideos, setTrendingVideos] = useState<TrendingVideo[]>([]);
   const [aiSummary, setAiSummary] = useState("");
   const [summaryLoading, setSummaryLoading] = useState(false);
+  const [replyTo, setReplyTo] = useState<string | null>(null);
+  const [replyText, setReplyText] = useState("");
 
   useEffect(() => {
     if (id) {
@@ -232,12 +237,28 @@ const Watch = () => {
       video_id: id,
       user_id: user.id,
       content: newComment.trim(),
+      parent_id: null,
     });
 
     if (!error) {
       setNewComment("");
       fetchComments();
       toast({ title: t.watch.commentAdded, description: t.watch.commentAddedDesc });
+    }
+  };
+
+  const handleReply = async (parentId: string) => {
+    if (!user || !replyText.trim()) return;
+    const { error } = await supabase.from("comments").insert({
+      video_id: id,
+      user_id: user.id,
+      content: replyText.trim(),
+      parent_id: parentId,
+    });
+    if (!error) {
+      setReplyText("");
+      setReplyTo(null);
+      fetchComments();
     }
   };
 
@@ -464,26 +485,75 @@ const Watch = () => {
                 {comments.length === 0 ? (
                   <p className="text-center text-muted-foreground py-8">{t.watch.noComments}</p>
                 ) : (
-                  comments.map((comment) => (
-                    <div key={comment.id} className="flex gap-3">
-                      <Avatar className="w-10 h-10">
-                        <AvatarImage src={getAvatarUrl(comment.profiles.avatar_url)} />
-                        <AvatarFallback><User className="w-4 h-4" /></AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2">
-                          <Link 
-                            to={`/channel/${comment.profiles.username}`}
-                            className="font-semibold hover:text-primary transition-colors"
-                          >
-                            {comment.profiles.display_name}
-                          </Link>
-                          <span className="text-sm text-muted-foreground">{formatDate(comment.created_at)}</span>
+                  comments
+                    .filter((c) => !c.parent_id)
+                    .map((comment) => {
+                      const replies = comments.filter((r) => r.parent_id === comment.id);
+                      return (
+                        <div key={comment.id} className="space-y-2">
+                          <div className="flex gap-3">
+                            <Avatar className="w-10 h-10">
+                              <AvatarImage src={getAvatarUrl(comment.profiles.avatar_url)} />
+                              <AvatarFallback><User className="w-4 h-4" /></AvatarFallback>
+                            </Avatar>
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2">
+                                <Link
+                                  to={`/channel/${comment.profiles.username}`}
+                                  className="font-semibold hover:text-primary transition-colors"
+                                >
+                                  {comment.profiles.display_name}
+                                </Link>
+                                <span className="text-sm text-muted-foreground">{formatDate(comment.created_at)}</span>
+                              </div>
+                              <p className="mt-1">{comment.content}</p>
+                              <button
+                                onClick={() => setReplyTo(replyTo === comment.id ? null : comment.id)}
+                                className="text-xs text-muted-foreground hover:text-primary mt-1 inline-flex items-center gap-1"
+                              >
+                                <CornerDownRight className="w-3 h-3" />
+                                {language === "tr" ? "Yanıtla" : "Reply"}
+                              </button>
+                            </div>
+                          </div>
+
+                          {replyTo === comment.id && user && (
+                            <div className="ml-13 pl-10 flex gap-2">
+                              <Textarea
+                                value={replyText}
+                                onChange={(e) => setReplyText(e.target.value)}
+                                placeholder={language === "tr" ? "Yanıt yaz..." : "Write a reply..."}
+                                className="min-h-[40px] max-h-32 bg-muted/30 border-primary/30"
+                              />
+                              <Button onClick={() => handleReply(comment.id)} disabled={!replyText.trim()} size="icon">
+                                <Send className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          )}
+
+                          {replies.map((r) => (
+                            <div key={r.id} className="ml-13 pl-10 flex gap-3 border-l-2 border-primary/30">
+                              <Avatar className="w-8 h-8">
+                                <AvatarImage src={getAvatarUrl(r.profiles.avatar_url)} />
+                                <AvatarFallback><User className="w-3 h-3" /></AvatarFallback>
+                              </Avatar>
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2">
+                                  <Link
+                                    to={`/channel/${r.profiles.username}`}
+                                    className="font-semibold text-sm hover:text-primary transition-colors"
+                                  >
+                                    {r.profiles.display_name}
+                                  </Link>
+                                  <span className="text-xs text-muted-foreground">{formatDate(r.created_at)}</span>
+                                </div>
+                                <p className="mt-1 text-sm">{r.content}</p>
+                              </div>
+                            </div>
+                          ))}
                         </div>
-                        <p className="mt-1">{comment.content}</p>
-                      </div>
-                    </div>
-                  ))
+                      );
+                    })
                 )}
               </div>
             </div>

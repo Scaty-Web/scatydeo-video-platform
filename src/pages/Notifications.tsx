@@ -6,7 +6,7 @@ import { useLanguage } from "@/hooks/useLanguage";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
-import { Bell, Check, Info, AlertTriangle, Video } from "lucide-react";
+import { Bell, Check, Info, AlertTriangle, Video, Shield } from "lucide-react";
 
 interface Notification {
   id: string;
@@ -76,6 +76,8 @@ const Notifications = () => {
         return <Video className="w-5 h-5 text-primary" />;
       case "warning":
         return <AlertTriangle className="w-5 h-5 text-yellow-500" />;
+      case "moderation":
+        return <Shield className="w-5 h-5 text-primary" />;
       default:
         return <Info className="w-5 h-5 text-blue-500" />;
     }
@@ -144,8 +146,14 @@ const Notifications = () => {
               {notifications.map((notification) => (
                 <div
                   key={notification.id}
-                  className={`glass-card p-4 rounded-xl flex items-start gap-4 transition-all cursor-pointer hover:border-primary/40 ${
-                    !notification.is_read ? "border-l-4 border-l-primary" : ""
+                  className={`${
+                    notification.type === "moderation"
+                      ? "m3-surface-high border-l-4 border-l-primary bg-primary/5"
+                      : "glass-card hover:border-primary/40"
+                  } p-4 rounded-xl flex items-start gap-4 transition-all cursor-pointer ${
+                    !notification.is_read && notification.type !== "moderation"
+                      ? "border-l-4 border-l-primary"
+                      : ""
                   }`}
                   onClick={() => {
                     markAsRead(notification.id);
@@ -158,6 +166,12 @@ const Notifications = () => {
                     {getIcon(notification.type)}
                   </div>
                   <div className="flex-1 min-w-0">
+                    {notification.type === "moderation" && (
+                      <span className="m3-chip mb-1.5">
+                        <Shield className="w-3 h-3" />
+                        {language === "tr" ? "Moderasyon Mesajı" : "Moderation Message"}
+                      </span>
+                    )}
                     <p className={`font-semibold ${!notification.is_read ? "text-foreground" : "text-muted-foreground"}`}>
                       {notification.title}
                     </p>

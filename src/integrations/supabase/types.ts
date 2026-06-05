@@ -44,6 +44,7 @@ export type Database = {
           created_at: string | null
           id: string
           likes_count: number | null
+          parent_id: string | null
           user_id: string
           video_id: string
         }
@@ -52,6 +53,7 @@ export type Database = {
           created_at?: string | null
           id?: string
           likes_count?: number | null
+          parent_id?: string | null
           user_id: string
           video_id: string
         }
@@ -60,10 +62,18 @@ export type Database = {
           created_at?: string | null
           id?: string
           likes_count?: number | null
+          parent_id?: string | null
           user_id?: string
           video_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "comments_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "comments"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "comments_user_id_fkey"
             columns: ["user_id"]
@@ -116,6 +126,7 @@ export type Database = {
           created_at: string
           id: string
           news_id: string
+          parent_id: string | null
           user_id: string
         }
         Insert: {
@@ -123,6 +134,7 @@ export type Database = {
           created_at?: string
           id?: string
           news_id: string
+          parent_id?: string | null
           user_id: string
         }
         Update: {
@@ -130,9 +142,18 @@ export type Database = {
           created_at?: string
           id?: string
           news_id?: string
+          parent_id?: string | null
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "news_comments_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "news_comments"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       notifications: {
         Row: {
@@ -821,6 +842,7 @@ export type Database = {
           created_at: string | null
           id: string
           likes_count: number | null
+          parent_id: string | null
           user_id: string
           video_id: string
         }[]

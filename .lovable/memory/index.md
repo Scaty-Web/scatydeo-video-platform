@@ -35,5 +35,8 @@ Updated: today
 - [v2 Welcome Screen](mem://features/v2-welcome-system) — Web Audio API intro page, scatydeo_v2_seen preference
 - [Stream Recording](mem://features/live-streaming-recording) — Local/display streams saved as .webm via MediaRecorder
 - [Stream Viewing & Chat](mem://features/live-streaming-viewing) — Watch page chat uses polling instead of Realtime
+- [News & Download](mem://features/news-and-download) — News page, video download, threaded comment replies, M3 surfaces
+- [Moderation Panel](mem://features/moderation-panel) — MOD button in navbar, ban/promote/message via ModerationDialog
+- [Manage Videos](mem://features/manage-videos) — /manage/videos page lets users delete or toggle visibility of their own videos
 - [News & Download](mem://features/news-and-download) — /news page with comments + video download on Watch & Switch
 - [Switch (Shorts)](mem://features/switch-shorts) — Vertical short-video system, /switch feed, /upload/switch, separate switches tables, CSS-only SwitchLogo
