@@ -22,7 +22,9 @@ import {
   Shield,
   ExternalLink,
   Loader2,
-  Download
+  Download,
+  CornerDownRight,
+  Send
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import ReportVideoDialog from "@/components/ReportVideoDialog";
@@ -86,6 +88,8 @@ const Watch = () => {
   const [trendingVideos, setTrendingVideos] = useState<TrendingVideo[]>([]);
   const [aiSummary, setAiSummary] = useState("");
   const [summaryLoading, setSummaryLoading] = useState(false);
+  const [replyTo, setReplyTo] = useState<string | null>(null);
+  const [replyText, setReplyText] = useState("");
 
   useEffect(() => {
     if (id) {
@@ -233,12 +237,28 @@ const Watch = () => {
       video_id: id,
       user_id: user.id,
       content: newComment.trim(),
+      parent_id: null,
     });
 
     if (!error) {
       setNewComment("");
       fetchComments();
       toast({ title: t.watch.commentAdded, description: t.watch.commentAddedDesc });
+    }
+  };
+
+  const handleReply = async (parentId: string) => {
+    if (!user || !replyText.trim()) return;
+    const { error } = await supabase.from("comments").insert({
+      video_id: id,
+      user_id: user.id,
+      content: replyText.trim(),
+      parent_id: parentId,
+    });
+    if (!error) {
+      setReplyText("");
+      setReplyTo(null);
+      fetchComments();
     }
   };
 
