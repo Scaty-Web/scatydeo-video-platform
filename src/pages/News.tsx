@@ -10,7 +10,7 @@ import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Newspaper, MessageCircle, Loader2, Send, Trash2 } from "lucide-react";
+import { Newspaper, MessageCircle, Loader2, Send, Trash2, CornerDownRight } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
@@ -29,6 +29,7 @@ interface NewsComment {
   user_id: string;
   content: string;
   created_at: string;
+  parent_id: string | null;
   profiles?: { username: string | null; display_name: string | null; avatar_url: string | null } | null;
 }
 
@@ -40,6 +41,9 @@ const News = () => {
   const [openComments, setOpenComments] = useState<Record<string, boolean>>({});
   const [inputs, setInputs] = useState<Record<string, string>>({});
   const [posting, setPosting] = useState<Record<string, boolean>>({});
+  const [replyTo, setReplyTo] = useState<Record<string, string | null>>({});
+  const [replyText, setReplyText] = useState<Record<string, string>>({});
+  const [replyBusy, setReplyBusy] = useState<Record<string, boolean>>({});
 
   const isMobile = useIsMobile();
   const { user } = useAuth();
@@ -64,9 +68,9 @@ const News = () => {
   const loadComments = async (newsId: string) => {
     const { data } = await supabase
       .from("news_comments")
-      .select("id, news_id, user_id, content, created_at")
+      .select("id, news_id, user_id, content, created_at, parent_id")
       .eq("news_id", newsId)
-      .order("created_at", { ascending: false });
+      .order("created_at", { ascending: true });
     const list = (data ?? []) as NewsComment[];
     const ids = Array.from(new Set(list.map((c) => c.user_id)));
     if (ids.length) {
@@ -96,7 +100,7 @@ const News = () => {
     setPosting((m) => ({ ...m, [newsId]: true }));
     const { data, error } = await supabase
       .from("news_comments")
-      .insert({ news_id: newsId, user_id: user.id, content })
+      .insert({ news_id: newsId, user_id: user.id, content, parent_id: null })
       .select()
       .single();
     setPosting((m) => ({ ...m, [newsId]: false }));
@@ -111,9 +115,37 @@ const News = () => {
       .maybeSingle();
     setComments((m) => ({
       ...m,
-      [newsId]: [{ ...(data as any), profiles: prof as any }, ...(m[newsId] ?? [])],
+      [newsId]: [...(m[newsId] ?? []), { ...(data as any), profiles: prof as any }],
     }));
     setInputs((m) => ({ ...m, [newsId]: "" }));
+  };
+
+  const sendReply = async (newsId: string, parentId: string) => {
+    if (!user) { navigate("/auth"); return; }
+    const content = (replyText[parentId] || "").trim();
+    if (!content) return;
+    setReplyBusy((m) => ({ ...m, [parentId]: true }));
+    const { data, error } = await supabase
+      .from("news_comments")
+      .insert({ news_id: newsId, user_id: user.id, content, parent_id: parentId })
+      .select()
+      .single();
+    setReplyBusy((m) => ({ ...m, [parentId]: false }));
+    if (error) {
+      toast({ title: isTr ? "Hata" : "Error", description: error.message, variant: "destructive" });
+      return;
+    }
+    const { data: prof } = await supabase
+      .from("profiles")
+      .select("username, display_name, avatar_url")
+      .eq("id", user.id)
+      .maybeSingle();
+    setComments((m) => ({
+      ...m,
+      [newsId]: [...(m[newsId] ?? []), { ...(data as any), profiles: prof as any }],
+    }));
+    setReplyText((m) => ({ ...m, [parentId]: "" }));
+    setReplyTo((m) => ({ ...m, [newsId]: null }));
   };
 
   const deleteComment = async (newsId: string, commentId: string) => {
@@ -227,31 +259,89 @@ const News = () => {
                             {isTr ? "Henüz yorum yok." : "No comments yet."}
                           </p>
                         ) : (
-                          list.map((c) => (
-                            <div key={c.id} className="flex gap-2 group">
-                              <Avatar className="w-8 h-8">
-                                <AvatarImage src={getAvatarUrl(c.profiles?.avatar_url)} />
-                                <AvatarFallback>
-                                  {(c.profiles?.display_name || c.profiles?.username || "?").charAt(0)}
-                                </AvatarFallback>
-                              </Avatar>
-                              <div className="flex-1">
-                                <p className="text-xs font-semibold">
-                                  @{c.profiles?.username || c.profiles?.display_name || "user"}
-                                </p>
-                                <p className="text-sm">{c.content}</p>
-                              </div>
-                              {user?.id === c.user_id && (
-                                <button
-                                  onClick={() => deleteComment(n.id, c.id)}
-                                  className="opacity-0 group-hover:opacity-100 transition-opacity text-destructive"
-                                  aria-label="delete"
-                                >
-                                  <Trash2 className="w-4 h-4" />
-                                </button>
-                              )}
-                            </div>
-                          ))
+                          list
+                            .filter((c) => !c.parent_id)
+                            .map((c) => {
+                              const replies = list.filter((r) => r.parent_id === c.id);
+                              return (
+                                <div key={c.id} className="space-y-2">
+                                  <div className="flex gap-2 group">
+                                    <Avatar className="w-8 h-8">
+                                      <AvatarImage src={getAvatarUrl(c.profiles?.avatar_url)} />
+                                      <AvatarFallback>
+                                        {(c.profiles?.display_name || c.profiles?.username || "?").charAt(0)}
+                                      </AvatarFallback>
+                                    </Avatar>
+                                    <div className="flex-1">
+                                      <p className="text-xs font-semibold">
+                                        @{c.profiles?.username || c.profiles?.display_name || "user"}
+                                      </p>
+                                      <p className="text-sm">{c.content}</p>
+                                      <button
+                                        onClick={() => setReplyTo((m) => ({ ...m, [n.id]: m[n.id] === c.id ? null : c.id }))}
+                                        className="text-xs text-muted-foreground hover:text-primary mt-1 inline-flex items-center gap-1"
+                                      >
+                                        <CornerDownRight className="w-3 h-3" />
+                                        {isTr ? "Yanıtla" : "Reply"}
+                                      </button>
+                                    </div>
+                                    {user?.id === c.user_id && (
+                                      <button
+                                        onClick={() => deleteComment(n.id, c.id)}
+                                        className="opacity-0 group-hover:opacity-100 transition-opacity text-destructive"
+                                        aria-label="delete"
+                                      >
+                                        <Trash2 className="w-4 h-4" />
+                                      </button>
+                                    )}
+                                  </div>
+
+                                  {replyTo[n.id] === c.id && user && (
+                                    <div className="ml-10 flex gap-2">
+                                      <Textarea
+                                        value={replyText[c.id] || ""}
+                                        onChange={(e) => setReplyText((m) => ({ ...m, [c.id]: e.target.value }))}
+                                        placeholder={isTr ? "Yanıt yaz..." : "Write a reply..."}
+                                        className="min-h-[40px] max-h-32"
+                                      />
+                                      <Button
+                                        onClick={() => sendReply(n.id, c.id)}
+                                        disabled={!replyText[c.id]?.trim() || replyBusy[c.id]}
+                                        size="icon"
+                                      >
+                                        {replyBusy[c.id] ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                                      </Button>
+                                    </div>
+                                  )}
+
+                                  {replies.map((r) => (
+                                    <div key={r.id} className="ml-10 flex gap-2 group border-l-2 border-primary/30 pl-3">
+                                      <Avatar className="w-7 h-7">
+                                        <AvatarImage src={getAvatarUrl(r.profiles?.avatar_url)} />
+                                        <AvatarFallback>
+                                          {(r.profiles?.display_name || r.profiles?.username || "?").charAt(0)}
+                                        </AvatarFallback>
+                                      </Avatar>
+                                      <div className="flex-1">
+                                        <p className="text-xs font-semibold">
+                                          @{r.profiles?.username || r.profiles?.display_name || "user"}
+                                        </p>
+                                        <p className="text-sm">{r.content}</p>
+                                      </div>
+                                      {user?.id === r.user_id && (
+                                        <button
+                                          onClick={() => deleteComment(n.id, r.id)}
+                                          className="opacity-0 group-hover:opacity-100 transition-opacity text-destructive"
+                                          aria-label="delete"
+                                        >
+                                          <Trash2 className="w-4 h-4" />
+                                        </button>
+                                      )}
+                                    </div>
+                                  ))}
+                                </div>
+                              );
+                            })
                         )}
                       </div>
                     )}
