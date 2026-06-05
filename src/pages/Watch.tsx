@@ -53,6 +53,7 @@ interface Comment {
   content: string;
   created_at: string;
   user_id: string;
+  parent_id: string | null;
   profiles: {
     username: string;
     display_name: string;
