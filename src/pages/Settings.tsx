@@ -193,6 +193,23 @@ const Settings = () => {
             {t.settings.title}
           </h1>
 
+          {isBanned && (
+            <div className="mb-6 m3-surface-high !border-red-500/40 p-4 flex items-start gap-3">
+              <Ban className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
+              <div className="flex-1 text-sm">
+                <p className="font-semibold text-red-400">
+                  Hesabınız askıya alındığı için değiştiremiyorsunuz.
+                </p>
+                <button
+                  onClick={() => { sessionStorage.removeItem("scatydeo_guest"); window.location.href = "/banned"; }}
+                  className="text-xs text-red-300 hover:underline mt-1"
+                >
+                  Yine başka kişiyi mi banladık? Buraya tıkla.
+                </button>
+              </div>
+            </div>
+          )}
+
           <Tabs defaultValue="profile" className="space-y-6">
             <TabsList className="bg-muted/30">
               <TabsTrigger value="profile" className="gap-2">
