@@ -327,8 +327,7 @@ const Settings = () => {
                   />
                 </div>
 
-                <Button variant="hero" onClick={handleSave} disabled={saving}>
-                  {/* banned users cannot save */}
+                <Button variant="hero" onClick={handleSave} disabled={saving || isBanned}>
                   {saving ? t.settings.saving : t.settings.saveChanges}
                 </Button>
               </div>
