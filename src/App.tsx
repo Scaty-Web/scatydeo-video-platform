@@ -46,7 +46,10 @@ const AppRoutes = () => {
   }
 
   if (isBanned) {
-    return <Banned />;
+    const isGuest = typeof window !== "undefined" && sessionStorage.getItem("scatydeo_guest") === "1";
+    if (!isGuest) {
+      return <Banned />;
+    }
   }
 
   return (
