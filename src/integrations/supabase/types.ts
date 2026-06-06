@@ -824,11 +824,21 @@ export type Database = {
         Args: { target_video_id: string }
         Returns: boolean
       }
+      get_ban_banner: { Args: { _user_id: string }; Returns: string }
       get_ban_info: {
         Args: { _user_id: string }
         Returns: {
           banned_at: string
           reason: string
+        }[]
+      }
+      get_profile_by_email: {
+        Args: { _email: string }
+        Returns: {
+          avatar_url: string
+          display_name: string
+          id: string
+          username: string
         }[]
       }
       get_switch_like_count: {
