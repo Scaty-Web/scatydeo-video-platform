@@ -5,19 +5,27 @@ import { useLanguage } from "@/hooks/useLanguage";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Eye, EyeOff, Mail, Lock, User, Sparkles } from "lucide-react";
+import { Eye, EyeOff, Mail, Lock, User, Play, ArrowRight, ArrowLeft, KeyRound, ShieldCheck, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { getAvatarUrl } from "@/lib/defaults";
 import { z } from "zod";
+
+type Step = "email" | "password" | "signup" | "otp_sent" | "otp_verify" | "post_otp" | "reset_password";
 
 const Auth = () => {
   const { t } = useLanguage();
-  const [isLogin, setIsLogin] = useState(true);
+  const [step, setStep] = useState<Step>("email");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [username, setUsername] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [errors, setErrors] = useState<{ email?: string; password?: string; username?: string }>({});
+  const [errors, setErrors] = useState<{ email?: string; password?: string; username?: string; code?: string }>({});
+  const [foundProfile, setFoundProfile] = useState<{ username: string | null; display_name: string | null; avatar_url: string | null } | null>(null);
+  const [otpCode, setOtpCode] = useState("");
+  const [newPassword, setNewPassword] = useState("");
 
   const { signIn, signUp, user } = useAuth();
   const navigate = useNavigate();
@@ -33,227 +41,301 @@ const Auth = () => {
     }
   }, [user, navigate]);
 
-  const validateForm = () => {
-    const newErrors: { email?: string; password?: string; username?: string } = {};
-
-    const emailResult = emailSchema.safeParse(email);
-    if (!emailResult.success) {
-      newErrors.email = emailResult.error.errors[0].message;
+  const handleEmailNext = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const r = emailSchema.safeParse(email);
+    if (!r.success) { setErrors({ email: r.error.errors[0].message }); return; }
+    setErrors({});
+    setIsLoading(true);
+    const { data } = await supabase.rpc("get_profile_by_email", { _email: email });
+    setIsLoading(false);
+    if (data && data.length > 0) {
+      setFoundProfile(data[0] as any);
+      setStep("password");
+    } else {
+      // No account → offer signup
+      setFoundProfile(null);
+      setStep("signup");
     }
-
-    const passwordResult = passwordSchema.safeParse(password);
-    if (!passwordResult.success) {
-      newErrors.password = passwordResult.error.errors[0].message;
-    }
-
-    if (!isLogin) {
-      const usernameResult = usernameSchema.safeParse(username);
-      if (!usernameResult.success) {
-        newErrors.username = usernameResult.error.errors[0].message;
-      }
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!validateForm()) return;
-
+    const r = passwordSchema.safeParse(password);
+    if (!r.success) { setErrors({ password: r.error.errors[0].message }); return; }
     setIsLoading(true);
-
-    try {
-      if (isLogin) {
-        const { error } = await signIn(email, password);
-        if (error) {
-          if (error.message.includes("Invalid login credentials")) {
-            toast({
-              title: t.auth.loginFailed,
-              description: t.auth.invalidCredentials,
-              variant: "destructive",
-            });
-          } else {
-            toast({
-              title: t.common.error,
-              description: error.message,
-              variant: "destructive",
-            });
-          }
-        } else {
-          toast({
-            title: t.auth.welcome,
-            description: t.auth.loginSuccess,
-          });
-        }
-      } else {
-        const { error } = await signUp(email, password, username);
-        if (error) {
-          if (error.message.includes("already registered")) {
-            toast({
-              title: t.auth.signupFailed,
-              description: t.auth.emailExists,
-              variant: "destructive",
-            });
-          } else {
-            toast({
-              title: t.common.error,
-              description: error.message,
-              variant: "destructive",
-            });
-          }
-        } else {
-          toast({
-            title: t.auth.signupSuccess,
-            description: t.auth.accountCreated,
-          });
-        }
-      }
-    } catch (error) {
-      toast({
-        title: t.common.error,
-        description: t.auth.somethingWrong,
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
+    const { error } = await signIn(email, password);
+    setIsLoading(false);
+    if (error) {
+      toast({ title: t.auth.loginFailed, description: t.auth.invalidCredentials, variant: "destructive" });
+    } else {
+      toast({ title: t.auth.welcome, description: t.auth.loginSuccess });
     }
+  };
+
+  const handleSignUp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const newErrors: typeof errors = {};
+    const pr = passwordSchema.safeParse(password);
+    if (!pr.success) newErrors.password = pr.error.errors[0].message;
+    const ur = usernameSchema.safeParse(username);
+    if (!ur.success) newErrors.username = ur.error.errors[0].message;
+    if (Object.keys(newErrors).length) { setErrors(newErrors); return; }
+    setErrors({});
+    setIsLoading(true);
+    const { error } = await signUp(email, password, username);
+    setIsLoading(false);
+    if (error) {
+      toast({ title: t.auth.signupFailed, description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: t.auth.signupSuccess, description: t.auth.accountCreated });
+    }
+  };
+
+  const sendOtp = async () => {
+    setIsLoading(true);
+    const { error } = await supabase.auth.signInWithOtp({
+      email,
+      options: { shouldCreateUser: false },
+    });
+    setIsLoading(false);
+    if (error) {
+      toast({ title: t.common.error, description: error.message, variant: "destructive" });
+      return;
+    }
+    setStep("otp_verify");
+  };
+
+  const verifyOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!otpCode.trim()) { setErrors({ code: "Kod gerekli" }); return; }
+    setIsLoading(true);
+    const { error } = await supabase.auth.verifyOtp({
+      email,
+      token: otpCode.trim(),
+      type: "email",
+    });
+    setIsLoading(false);
+    if (error) {
+      setErrors({ code: error.message });
+      return;
+    }
+    setErrors({});
+    setStep("post_otp");
+  };
+
+  const resetPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const r = passwordSchema.safeParse(newPassword);
+    if (!r.success) { setErrors({ password: r.error.errors[0].message }); return; }
+    setIsLoading(true);
+    const { error } = await supabase.auth.updateUser({ password: newPassword });
+    setIsLoading(false);
+    if (error) {
+      toast({ title: t.common.error, description: error.message, variant: "destructive" });
+      return;
+    }
+    toast({ title: "Şifre güncellendi", description: "Yeni şifrenle giriş yaptın." });
+    navigate("/");
   };
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4">
-      {/* Background Effects */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/20 rounded-full blur-3xl" />
-        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-accent/20 rounded-full blur-3xl" />
+    <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden bg-[hsl(270_50%_8%)]">
+      {/* M3 expressive background shapes */}
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute -top-32 -left-32 w-[28rem] h-[28rem] rounded-full bg-purple-600/30 blur-3xl" />
+        <div className="absolute top-1/3 -right-32 w-[24rem] h-[24rem] rounded-[40%_60%_70%_30%/40%_50%_60%_50%] bg-fuchsia-500/25 blur-3xl" />
+        <div className="absolute -bottom-40 left-1/4 w-[30rem] h-[30rem] rounded-[60%_40%_30%_70%/60%_40%_60%_40%] bg-violet-700/30 blur-3xl" />
+        <div className="absolute top-10 right-20 w-24 h-24 rounded-3xl bg-purple-500/20 backdrop-blur-sm rotate-12" />
+        <div className="absolute bottom-16 left-10 w-32 h-32 rounded-full border-2 border-purple-400/20" />
       </div>
 
-      <div className="relative w-full max-w-md">
-        {/* Logo */}
-        <div className="text-center mb-8">
-          <a href="/" className="inline-flex items-center gap-2">
-            <Sparkles className="w-10 h-10 text-primary" />
-            <span className="font-display text-3xl font-bold glow-text">Scatydeo</span>
+      <div className="relative w-full max-w-md m3-surface-high p-8 space-y-6">
+        {/* Logo header */}
+        <div className="flex flex-col items-center gap-2">
+          <a href="/" className="flex flex-col items-center gap-2">
+            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-[0_8px_24px_-8px_hsl(270_100%_60%/0.6)]">
+              <Play className="w-7 h-7 text-primary-foreground fill-current" />
+            </div>
+            <span className="font-display text-2xl font-bold">Scatydeo</span>
           </a>
-          <p className="text-muted-foreground mt-2">
-            {isLogin ? t.auth.loginTitle : t.auth.signupTitle}
-          </p>
+          {foundProfile && (step === "password") && (
+            <div className="flex flex-col items-center gap-2 mt-2">
+              <Avatar className="w-16 h-16 border-2 border-primary/40">
+                <AvatarImage src={getAvatarUrl(foundProfile.avatar_url)} />
+                <AvatarFallback>{(foundProfile.username || "?").charAt(0).toUpperCase()}</AvatarFallback>
+              </Avatar>
+              <p className="text-lg font-semibold">
+                Merhaba, {foundProfile.display_name || foundProfile.username} 👋
+              </p>
+            </div>
+          )}
         </div>
 
-        {/* Form Card */}
-        <div className="glass-card p-8 rounded-2xl border border-primary/20">
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {!isLogin && (
-              <div className="space-y-2">
-                <Label htmlFor="username" className="text-foreground">
-                  {t.auth.username}
-                </Label>
-                <div className="relative">
-                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                  <Input
-                    id="username"
-                    type="text"
-                    placeholder={t.auth.usernamePlaceholder}
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
-                    className="pl-10 bg-background/50 border-primary/30 focus:border-primary"
-                  />
-                </div>
-                {errors.username && (
-                  <p className="text-sm text-red-500">{errors.username}</p>
-                )}
-              </div>
-            )}
-
+        {/* STEP: email */}
+        {step === "email" && (
+          <form onSubmit={handleEmailNext} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="email" className="text-foreground">
-                {t.auth.email}
-              </Label>
+              <Label>{t.auth.email}</Label>
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                 <Input
-                  id="email"
                   type="email"
+                  autoFocus
                   placeholder={t.auth.emailPlaceholder}
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="pl-10 bg-background/50 border-primary/30 focus:border-primary"
+                  className="pl-10 h-12 rounded-xl bg-background/40 border-primary/30 focus:border-primary"
                 />
               </div>
-              {errors.email && (
-                <p className="text-sm text-red-500">{errors.email}</p>
-              )}
+              {errors.email && <p className="text-sm text-red-400">{errors.email}</p>}
             </div>
+            <Button type="submit" className="w-full h-12 rounded-full m3-fab !h-12 !px-6" disabled={isLoading}>
+              {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : (<>İleri <ArrowRight className="w-4 h-4" /></>)}
+            </Button>
+          </form>
+        )}
 
+        {/* STEP: password */}
+        {step === "password" && (
+          <form onSubmit={handleSignIn} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="password" className="text-foreground">
-                {t.auth.password}
-              </Label>
+              <Label>{t.auth.password}</Label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                 <Input
-                  id="password"
                   type={showPassword ? "text" : "password"}
+                  autoFocus
                   placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="pl-10 pr-10 bg-background/50 border-primary/30 focus:border-primary"
+                  className="pl-10 pr-10 h-12 rounded-xl bg-background/40 border-primary/30 focus:border-primary"
                 />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                >
+                <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">
                   {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </button>
               </div>
-              {errors.password && (
-                <p className="text-sm text-red-500">{errors.password}</p>
-              )}
+              {errors.password && <p className="text-sm text-red-400">{errors.password}</p>}
             </div>
-
-            <Button
-              type="submit"
-              variant="hero"
-              className="w-full"
-              disabled={isLoading}
-            >
-              {isLoading ? (
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  {isLogin ? t.auth.loggingIn : t.auth.signingUp}
-                </div>
-              ) : (
-                isLogin ? t.auth.loginBtn : t.auth.signupBtn
-              )}
+            <div className="flex justify-between text-sm">
+              <button type="button" onClick={() => { setStep("email"); setPassword(""); setFoundProfile(null); }} className="text-muted-foreground hover:underline flex items-center gap-1">
+                <ArrowLeft className="w-3 h-3" /> Geri
+              </button>
+              <button type="button" onClick={sendOtp} className="text-primary hover:underline">
+                Şifremi unuttum
+              </button>
+            </div>
+            <Button type="submit" className="w-full h-12 rounded-full m3-fab !h-12 !px-6" disabled={isLoading}>
+              {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : t.auth.loginBtn}
             </Button>
           </form>
+        )}
 
-          <div className="mt-6 text-center">
-            <p className="text-muted-foreground">
-              {isLogin ? t.auth.noAccount : t.auth.hasAccount}{" "}
-              <button
-                type="button"
-                onClick={() => {
-                  setIsLogin(!isLogin);
-                  setErrors({});
-                }}
-                className="text-primary hover:text-accent transition-colors font-medium"
-              >
-                {isLogin ? t.auth.signupBtn : t.auth.loginBtn}
-              </button>
+        {/* STEP: signup (no account found) */}
+        {step === "signup" && (
+          <form onSubmit={handleSignUp} className="space-y-4">
+            <p className="text-sm text-muted-foreground text-center">
+              Bu e-posta ile hesap bulunamadı. Yeni hesap oluştur.
             </p>
-          </div>
-        </div>
+            <div className="space-y-2">
+              <Label>{t.auth.username}</Label>
+              <div className="relative">
+                <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                <Input value={username} onChange={(e) => setUsername(e.target.value)} placeholder={t.auth.usernamePlaceholder} className="pl-10 h-12 rounded-xl bg-background/40 border-primary/30" />
+              </div>
+              {errors.username && <p className="text-sm text-red-400">{errors.username}</p>}
+            </div>
+            <div className="space-y-2">
+              <Label>{t.auth.password}</Label>
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                <Input type={showPassword ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" className="pl-10 h-12 rounded-xl bg-background/40 border-primary/30" />
+              </div>
+              {errors.password && <p className="text-sm text-red-400">{errors.password}</p>}
+            </div>
+            <div className="flex justify-between text-sm">
+              <button type="button" onClick={() => setStep("email")} className="text-muted-foreground hover:underline flex items-center gap-1">
+                <ArrowLeft className="w-3 h-3" /> Geri
+              </button>
+            </div>
+            <Button type="submit" className="w-full h-12 rounded-full m3-fab !h-12 !px-6" disabled={isLoading}>
+              {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : t.auth.signupBtn}
+            </Button>
+          </form>
+        )}
 
-        {/* Terms */}
-        <p className="text-center text-sm text-muted-foreground mt-6">
-          {t.auth.termsText}{" "}
-          <a href="/rules" className="text-primary hover:underline">
-            {t.auth.termsLink}
-          </a>{" "}
-          {t.auth.termsAccept}
+        {/* STEP: otp verify */}
+        {step === "otp_verify" && (
+          <form onSubmit={verifyOtp} className="space-y-4">
+            <p className="text-sm text-muted-foreground text-center">
+              {email} adresine 6 haneli kod gönderdik. Kodu gir.
+            </p>
+            <div className="space-y-2">
+              <Label>Doğrulama kodu</Label>
+              <div className="relative">
+                <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                <Input value={otpCode} onChange={(e) => setOtpCode(e.target.value)} placeholder="123456" autoFocus className="pl-10 h-12 rounded-xl bg-background/40 border-primary/30 text-center tracking-[0.4em] text-lg" />
+              </div>
+              {errors.code && <p className="text-sm text-red-400">{errors.code}</p>}
+            </div>
+            <div className="flex justify-between text-sm">
+              <button type="button" onClick={() => setStep("password")} className="text-muted-foreground hover:underline flex items-center gap-1">
+                <ArrowLeft className="w-3 h-3" /> Geri
+              </button>
+              <button type="button" onClick={sendOtp} className="text-primary hover:underline">
+                Yeniden gönder
+              </button>
+            </div>
+            <Button type="submit" className="w-full h-12 rounded-full m3-fab !h-12 !px-6" disabled={isLoading}>
+              {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Doğrula"}
+            </Button>
+          </form>
+        )}
+
+        {/* STEP: choose after OTP */}
+        {step === "post_otp" && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-center gap-2 text-green-400">
+              <ShieldCheck className="w-5 h-5" />
+              <span className="font-semibold">Doğrulandı</span>
+            </div>
+            <p className="text-sm text-muted-foreground text-center">Nasıl devam edelim?</p>
+            <button
+              onClick={() => navigate("/")}
+              className="w-full m3-state-layer p-4 rounded-xl border border-primary/30 bg-background/30 text-left hover:bg-primary/10"
+            >
+              <p className="font-semibold">Şifresiz giriş yap</p>
+              <p className="text-xs text-muted-foreground">Mevcut şifre değişmez, şimdi içeri gir.</p>
+            </button>
+            <button
+              onClick={() => setStep("reset_password")}
+              className="w-full m3-state-layer p-4 rounded-xl border border-primary/30 bg-background/30 text-left hover:bg-primary/10"
+            >
+              <p className="font-semibold">Şifreyi sıfırla</p>
+              <p className="text-xs text-muted-foreground">Yeni şifre belirle ve onunla devam et.</p>
+            </button>
+          </div>
+        )}
+
+        {/* STEP: reset password */}
+        {step === "reset_password" && (
+          <form onSubmit={resetPassword} className="space-y-4">
+            <div className="space-y-2">
+              <Label>Yeni şifre</Label>
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                <Input type={showPassword ? "text" : "password"} value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="••••••••" autoFocus className="pl-10 h-12 rounded-xl bg-background/40 border-primary/30" />
+              </div>
+              {errors.password && <p className="text-sm text-red-400">{errors.password}</p>}
+            </div>
+            <Button type="submit" className="w-full h-12 rounded-full m3-fab !h-12 !px-6" disabled={isLoading}>
+              {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Tamam"}
+            </Button>
+          </form>
+        )}
+
+        <p className="text-center text-xs text-muted-foreground">
+          {t.auth.termsText} <a href="/rules" className="text-primary hover:underline">{t.auth.termsLink}</a> {t.auth.termsAccept}
         </p>
       </div>
     </div>
