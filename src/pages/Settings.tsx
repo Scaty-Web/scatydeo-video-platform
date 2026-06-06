@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { User, Settings as SettingsIcon, Bell, Shield, LogOut, KeyRound, AlertTriangle, Upload as UploadIcon, Image as ImageIcon } from "lucide-react";
+import { User, Settings as SettingsIcon, Bell, Shield, LogOut, KeyRound, AlertTriangle, Upload as UploadIcon, Image as ImageIcon, Ban } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { getAvatarUrl, getBannerUrl } from "@/lib/defaults";
 
@@ -34,6 +34,7 @@ const Settings = () => {
   const [saving, setSaving] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [uploadingBanner, setUploadingBanner] = useState(false);
+  const [isBanned, setIsBanned] = useState(false);
 
   const [displayName, setDisplayName] = useState("");
   const [username, setUsername] = useState("");
@@ -50,6 +51,7 @@ const Settings = () => {
       return;
     }
     fetchProfile();
+    supabase.rpc("is_user_banned", { _user_id: user.id }).then(({ data }) => setIsBanned(!!data));
   }, [user, navigate]);
 
   const fetchProfile = async () => {
@@ -191,6 +193,23 @@ const Settings = () => {
             {t.settings.title}
           </h1>
 
+          {isBanned && (
+            <div className="mb-6 m3-surface-high !border-red-500/40 p-4 flex items-start gap-3">
+              <Ban className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
+              <div className="flex-1 text-sm">
+                <p className="font-semibold text-red-400">
+                  Hesabınız askıya alındığı için değiştiremiyorsunuz.
+                </p>
+                <button
+                  onClick={() => { sessionStorage.removeItem("scatydeo_guest"); window.location.href = "/banned"; }}
+                  className="text-xs text-red-300 hover:underline mt-1"
+                >
+                  Yine başka kişiyi mi banladık? Buraya tıkla.
+                </button>
+              </div>
+            </div>
+          )}
+
           <Tabs defaultValue="profile" className="space-y-6">
             <TabsList className="bg-muted/30">
               <TabsTrigger value="profile" className="gap-2">
@@ -308,7 +327,7 @@ const Settings = () => {
                   />
                 </div>
 
-                <Button variant="hero" onClick={handleSave} disabled={saving}>
+                <Button variant="hero" onClick={handleSave} disabled={saving || isBanned}>
                   {saving ? t.settings.saving : t.settings.saveChanges}
                 </Button>
               </div>
