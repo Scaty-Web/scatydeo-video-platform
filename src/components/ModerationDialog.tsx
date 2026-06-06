@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useLanguage } from "@/hooks/useLanguage";
@@ -14,7 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Search, Ban, Shield, Send, Loader2 } from "lucide-react";
+import { Search, Ban, Shield, Send, Loader2, Unlock } from "lucide-react";
 import { getAvatarUrl } from "@/lib/defaults";
 
 interface Profile {
@@ -39,15 +39,24 @@ const ModerationDialog = ({ open, onOpenChange }: Props) => {
   const [results, setResults] = useState<Profile[]>([]);
   const [searching, setSearching] = useState(false);
   const [selected, setSelected] = useState<Profile | null>(null);
-  const [action, setAction] = useState<"ban" | "promote" | "message" | null>(null);
+  const [action, setAction] = useState<"ban" | "unban" | "promote" | "message" | null>(null);
+  const [selectedBanned, setSelectedBanned] = useState(false);
   const [reason, setReason] = useState("");
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
 
   const reset = () => {
     setQuery(""); setResults([]); setSelected(null);
-    setAction(null); setReason(""); setMessage("");
+    setAction(null); setReason(""); setMessage(""); setSelectedBanned(false);
   };
+
+  useEffect(() => {
+    if (!selected) { setSelectedBanned(false); return; }
+    (async () => {
+      const { data } = await supabase.rpc("is_user_banned", { _user_id: selected.id });
+      setSelectedBanned(!!data);
+    })();
+  }, [selected]);
 
   const handleSearch = async () => {
     if (!query.trim()) return;
@@ -116,6 +125,48 @@ const ModerationDialog = ({ open, onOpenChange }: Props) => {
       return;
     }
     toast({ title: isTr ? "Mesaj gönderildi" : "Message sent" });
+    reset(); onOpenChange(false);
+  };
+
+  const runUnban = async () => {
+    if (!selected) return;
+    if (!reason.trim()) {
+      toast({ title: isTr ? "Sebep gerekli" : "Reason required", variant: "destructive" });
+      return;
+    }
+    setBusy(true);
+    // Generate AI message
+    let aiMessage = reason.trim();
+    try {
+      const { data, error: fnErr } = await supabase.functions.invoke("unban-message", {
+        body: { reason: reason.trim(), language },
+      });
+      if (!fnErr && data?.message) aiMessage = data.message;
+    } catch (e) {
+      console.error("unban-message invoke failed", e);
+    }
+
+    // Remove ban
+    const { error: delErr } = await supabase
+      .from("banned_users")
+      .delete()
+      .eq("user_id", selected.id);
+    if (delErr) {
+      setBusy(false);
+      toast({ title: isTr ? "Hata" : "Error", description: delErr.message, variant: "destructive" });
+      return;
+    }
+
+    // Notify user
+    await supabase.from("notifications").insert({
+      user_id: selected.id,
+      type: "unban",
+      title: isTr ? "Ban Açıldı" : "Ban Lifted",
+      message: aiMessage,
+    });
+
+    setBusy(false);
+    toast({ title: isTr ? "Ban açıldı" : "User unbanned" });
     reset(); onOpenChange(false);
   };
 
@@ -189,10 +240,17 @@ const ModerationDialog = ({ open, onOpenChange }: Props) => {
 
             {!action ? (
               <div className="grid grid-cols-3 gap-2">
-                <Button variant="destructive" onClick={() => setAction("ban")} className="flex-col h-20 gap-1">
-                  <Ban className="w-5 h-5" />
-                  <span className="text-xs">{isTr ? "Banla" : "Ban"}</span>
-                </Button>
+                {selectedBanned ? (
+                  <Button variant="default" onClick={() => setAction("unban")} className="flex-col h-20 gap-1 bg-green-600 hover:bg-green-700 text-white">
+                    <Unlock className="w-5 h-5" />
+                    <span className="text-xs">{isTr ? "Banı Aç" : "Unban"}</span>
+                  </Button>
+                ) : (
+                  <Button variant="destructive" onClick={() => setAction("ban")} className="flex-col h-20 gap-1">
+                    <Ban className="w-5 h-5" />
+                    <span className="text-xs">{isTr ? "Banla" : "Ban"}</span>
+                  </Button>
+                )}
                 <Button variant="secondary" onClick={() => setAction("promote")} className="flex-col h-20 gap-1">
                   <Shield className="w-5 h-5" />
                   <span className="text-xs">{isTr ? "Mod Yap" : "Promote"}</span>
@@ -213,6 +271,20 @@ const ModerationDialog = ({ open, onOpenChange }: Props) => {
                   <Button variant="ghost" onClick={() => setAction(null)}>{isTr ? "İptal" : "Cancel"}</Button>
                   <Button variant="destructive" onClick={runBan} disabled={busy}>
                     {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : (isTr ? "Banla" : "Ban")}
+                  </Button>
+                </div>
+              </div>
+            ) : action === "unban" ? (
+              <div className="space-y-2">
+                <Textarea
+                  placeholder={isTr ? "Neden banı açıyorsun? (AI bu sebebi kullanıcıya iletecek)" : "Why are you unbanning? (AI will explain to the user)"}
+                  value={reason}
+                  onChange={(e) => setReason(e.target.value)}
+                />
+                <div className="flex gap-2 justify-end">
+                  <Button variant="ghost" onClick={() => setAction(null)}>{isTr ? "İptal" : "Cancel"}</Button>
+                  <Button onClick={runUnban} disabled={busy} className="bg-green-600 hover:bg-green-700 text-white">
+                    {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : (isTr ? "Banı Aç" : "Unban")}
                   </Button>
                 </div>
               </div>
