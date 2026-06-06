@@ -14,7 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Search, Ban, Shield, Send, Loader2, Unlock } from "lucide-react";
+import { Search, Ban, Shield, ShieldOff, Send, Loader2, Unlock } from "lucide-react";
 import { getAvatarUrl } from "@/lib/defaults";
 
 interface Profile {
@@ -41,20 +41,31 @@ const ModerationDialog = ({ open, onOpenChange }: Props) => {
   const [selected, setSelected] = useState<Profile | null>(null);
   const [action, setAction] = useState<"ban" | "unban" | "promote" | "message" | null>(null);
   const [selectedBanned, setSelectedBanned] = useState(false);
+  const [selectedIsMod, setSelectedIsMod] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [reason, setReason] = useState("");
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
 
   const reset = () => {
     setQuery(""); setResults([]); setSelected(null);
-    setAction(null); setReason(""); setMessage(""); setSelectedBanned(false);
+    setAction(null); setReason(""); setMessage(""); setSelectedBanned(false); setSelectedIsMod(false);
   };
 
   useEffect(() => {
-    if (!selected) { setSelectedBanned(false); return; }
+    if (!user) return;
+    supabase.rpc("has_role", { _user_id: user.id, _role: "admin" }).then(({ data }) => setIsAdmin(!!data));
+  }, [user]);
+
+  useEffect(() => {
+    if (!selected) { setSelectedBanned(false); setSelectedIsMod(false); return; }
     (async () => {
-      const { data } = await supabase.rpc("is_user_banned", { _user_id: selected.id });
-      setSelectedBanned(!!data);
+      const [{ data: banned }, { data: isMod }] = await Promise.all([
+        supabase.rpc("is_user_banned", { _user_id: selected.id }),
+        supabase.rpc("has_role", { _user_id: selected.id, _role: "moderator" }),
+      ]);
+      setSelectedBanned(!!banned);
+      setSelectedIsMod(!!isMod);
     })();
   }, [selected]);
 
@@ -103,6 +114,23 @@ const ModerationDialog = ({ open, onOpenChange }: Props) => {
       return;
     }
     toast({ title: isTr ? "Moderatör yapıldı" : "Promoted to moderator" });
+    reset(); onOpenChange(false);
+  };
+
+  const runDemote = async () => {
+    if (!selected) return;
+    setBusy(true);
+    const { error } = await supabase
+      .from("user_roles")
+      .delete()
+      .eq("user_id", selected.id)
+      .eq("role", "moderator");
+    setBusy(false);
+    if (error) {
+      toast({ title: isTr ? "Hata" : "Error", description: error.message, variant: "destructive" });
+      return;
+    }
+    toast({ title: isTr ? "Moderatörlük kaldırıldı" : "Moderator removed" });
     reset(); onOpenChange(false);
   };
 
@@ -239,7 +267,7 @@ const ModerationDialog = ({ open, onOpenChange }: Props) => {
             </div>
 
             {!action ? (
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-2 gap-2">
                 {selectedBanned ? (
                   <Button variant="default" onClick={() => setAction("unban")} className="flex-col h-20 gap-1 bg-green-600 hover:bg-green-700 text-white">
                     <Unlock className="w-5 h-5" />
@@ -251,10 +279,19 @@ const ModerationDialog = ({ open, onOpenChange }: Props) => {
                     <span className="text-xs">{isTr ? "Banla" : "Ban"}</span>
                   </Button>
                 )}
-                <Button variant="secondary" onClick={() => setAction("promote")} className="flex-col h-20 gap-1">
-                  <Shield className="w-5 h-5" />
-                  <span className="text-xs">{isTr ? "Mod Yap" : "Promote"}</span>
-                </Button>
+                {isAdmin && (
+                  selectedIsMod ? (
+                    <Button variant="secondary" onClick={runDemote} disabled={busy} className="flex-col h-20 gap-1 bg-orange-500/20 hover:bg-orange-500/30 text-orange-300 border border-orange-500/40">
+                      {busy ? <Loader2 className="w-5 h-5 animate-spin" /> : <ShieldOff className="w-5 h-5" />}
+                      <span className="text-xs">{isTr ? "Modluğu Kaldır" : "Demote"}</span>
+                    </Button>
+                  ) : (
+                    <Button variant="secondary" onClick={() => setAction("promote")} className="flex-col h-20 gap-1">
+                      <Shield className="w-5 h-5" />
+                      <span className="text-xs">{isTr ? "Mod Yap" : "Promote"}</span>
+                    </Button>
+                  )
+                )}
                 <Button variant="default" onClick={() => setAction("message")} className="flex-col h-20 gap-1">
                   <Send className="w-5 h-5" />
                   <span className="text-xs">{isTr ? "Mesaj" : "Message"}</span>
