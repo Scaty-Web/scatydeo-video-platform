@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { User, Settings as SettingsIcon, Bell, Shield, LogOut, KeyRound, AlertTriangle, Upload as UploadIcon, Image as ImageIcon } from "lucide-react";
+import { User, Settings as SettingsIcon, Bell, Shield, LogOut, KeyRound, AlertTriangle, Upload as UploadIcon, Image as ImageIcon, Ban } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { getAvatarUrl, getBannerUrl } from "@/lib/defaults";
 
@@ -34,6 +34,7 @@ const Settings = () => {
   const [saving, setSaving] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [uploadingBanner, setUploadingBanner] = useState(false);
+  const [isBanned, setIsBanned] = useState(false);
 
   const [displayName, setDisplayName] = useState("");
   const [username, setUsername] = useState("");
@@ -50,6 +51,7 @@ const Settings = () => {
       return;
     }
     fetchProfile();
+    supabase.rpc("is_user_banned", { _user_id: user.id }).then(({ data }) => setIsBanned(!!data));
   }, [user, navigate]);
 
   const fetchProfile = async () => {
