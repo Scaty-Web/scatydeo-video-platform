@@ -35,7 +35,20 @@ const Auth = () => {
   const passwordSchema = z.string().min(6, t.auth.minPassword);
   const usernameSchema = z.string().min(3, t.auth.minUsername).max(20, t.auth.maxUsername);
 
+  // Detect magic-link landing: if URL hash contains access_token, Supabase set a session.
+  // Don't auto-redirect; show post-link choice (passwordless vs reset password).
+  const [linkRecovery, setLinkRecovery] = useState(false);
+
   useEffect(() => {
+    const hash = window.location.hash || "";
+    const isRecovery = hash.includes("access_token") || hash.includes("type=recovery") || hash.includes("type=magiclink");
+    if (isRecovery) {
+      setLinkRecovery(true);
+      setStep("post_otp");
+      // clean the hash from the URL bar
+      window.history.replaceState(null, "", window.location.pathname);
+      return;
+    }
     if (user) {
       navigate("/");
     }
@@ -96,14 +109,21 @@ const Auth = () => {
     setIsLoading(true);
     const { error } = await supabase.auth.signInWithOtp({
       email,
-      options: { shouldCreateUser: false },
+      options: {
+        shouldCreateUser: false,
+        emailRedirectTo: `${window.location.origin}/auth`,
+      },
     });
     setIsLoading(false);
     if (error) {
       toast({ title: t.common.error, description: error.message, variant: "destructive" });
       return;
     }
-    setStep("otp_verify");
+    setStep("otp_sent");
+    toast({
+      title: "Bağlantı gönderildi",
+      description: `${email} adresine tek kullanımlık bir bağlantı gönderdik. Linke tıkla, Scatydeo'ya geri dön.`,
+    });
   };
 
   const verifyOtp = async (e: React.FormEvent) => {
