@@ -35,7 +35,20 @@ const Auth = () => {
   const passwordSchema = z.string().min(6, t.auth.minPassword);
   const usernameSchema = z.string().min(3, t.auth.minUsername).max(20, t.auth.maxUsername);
 
+  // Detect magic-link landing: if URL hash contains access_token, Supabase set a session.
+  // Don't auto-redirect; show post-link choice (passwordless vs reset password).
+  const [linkRecovery, setLinkRecovery] = useState(false);
+
   useEffect(() => {
+    const hash = window.location.hash || "";
+    const isRecovery = hash.includes("access_token") || hash.includes("type=recovery") || hash.includes("type=magiclink");
+    if (isRecovery) {
+      setLinkRecovery(true);
+      setStep("post_otp");
+      // clean the hash from the URL bar
+      window.history.replaceState(null, "", window.location.pathname);
+      return;
+    }
     if (user) {
       navigate("/");
     }
@@ -96,14 +109,21 @@ const Auth = () => {
     setIsLoading(true);
     const { error } = await supabase.auth.signInWithOtp({
       email,
-      options: { shouldCreateUser: false },
+      options: {
+        shouldCreateUser: false,
+        emailRedirectTo: `${window.location.origin}/auth`,
+      },
     });
     setIsLoading(false);
     if (error) {
       toast({ title: t.common.error, description: error.message, variant: "destructive" });
       return;
     }
-    setStep("otp_verify");
+    setStep("otp_sent");
+    toast({
+      title: "Bağlantı gönderildi",
+      description: `${email} adresine tek kullanımlık bir bağlantı gönderdik. Linke tıkla, Scatydeo'ya geri dön.`,
+    });
   };
 
   const verifyOtp = async (e: React.FormEvent) => {
@@ -231,7 +251,32 @@ const Auth = () => {
           </form>
         )}
 
-        {/* STEP: signup (no account found) */}
+        {/* STEP: link sent — waiting for user to click magic link in email */}
+        {step === "otp_sent" && (
+          <div className="space-y-4 text-center">
+            <div className="mx-auto w-14 h-14 rounded-full bg-primary/15 flex items-center justify-center">
+              <Mail className="w-7 h-7 text-primary" />
+            </div>
+            <h2 className="text-xl font-semibold">E-postanı kontrol et</h2>
+            <p className="text-sm text-muted-foreground">
+              <span className="text-foreground font-medium">{email}</span> adresine
+              <br />tek kullanımlık bir bağlantı gönderdik.
+            </p>
+            <p className="text-xs text-muted-foreground">
+              Linke tıkla, Scatydeo'ya geri dön. Bağlantı yalnızca bir kez kullanılabilir.
+            </p>
+            <div className="flex justify-between text-sm pt-2">
+              <button type="button" onClick={() => setStep("password")} className="text-muted-foreground hover:underline flex items-center gap-1">
+                <ArrowLeft className="w-3 h-3" /> Geri
+              </button>
+              <button type="button" onClick={sendOtp} className="text-primary hover:underline">
+                Yeniden gönder
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* STEP: signup (no account found) — render block */}
         {step === "signup" && (
           <form onSubmit={handleSignUp} className="space-y-4">
             <p className="text-sm text-muted-foreground text-center">
