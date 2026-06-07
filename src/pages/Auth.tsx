@@ -253,8 +253,6 @@ const Auth = () => {
 
         {/* STEP: signup (no account found) */}
         {step === "signup" && (
-          <>
-          {false && null}
           <form onSubmit={handleSignUp} className="space-y-4">
             <p className="text-sm text-muted-foreground text-center">
               Bu e-posta ile hesap bulunamadı. Yeni hesap oluştur.
