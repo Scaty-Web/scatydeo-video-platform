@@ -253,6 +253,36 @@ const Auth = () => {
 
         {/* STEP: signup (no account found) */}
         {step === "signup" && (
+          null
+        )}
+
+        {/* STEP: link sent — waiting for user to click magic link in email */}
+        {step === "otp_sent" && (
+          <div className="space-y-4 text-center">
+            <div className="mx-auto w-14 h-14 rounded-full bg-primary/15 flex items-center justify-center">
+              <Mail className="w-7 h-7 text-primary" />
+            </div>
+            <h2 className="text-xl font-semibold">E-postanı kontrol et</h2>
+            <p className="text-sm text-muted-foreground">
+              <span className="text-foreground font-medium">{email}</span> adresine
+              <br />tek kullanımlık bir bağlantı gönderdik.
+            </p>
+            <p className="text-xs text-muted-foreground">
+              Linke tıkla, Scatydeo'ya geri dön. Bağlantı yalnızca bir kez kullanılabilir.
+            </p>
+            <div className="flex justify-between text-sm pt-2">
+              <button type="button" onClick={() => setStep("password")} className="text-muted-foreground hover:underline flex items-center gap-1">
+                <ArrowLeft className="w-3 h-3" /> Geri
+              </button>
+              <button type="button" onClick={sendOtp} className="text-primary hover:underline">
+                Yeniden gönder
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* STEP: signup (no account found) — render block */}
+        {step === "signup" && (
           <form onSubmit={handleSignUp} className="space-y-4">
             <p className="text-sm text-muted-foreground text-center">
               Bu e-posta ile hesap bulunamadı. Yeni hesap oluştur.
