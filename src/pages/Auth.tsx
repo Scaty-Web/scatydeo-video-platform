@@ -251,11 +251,6 @@ const Auth = () => {
           </form>
         )}
 
-        {/* STEP: signup (no account found) */}
-        {step === "signup" && (
-          null
-        )}
-
         {/* STEP: link sent — waiting for user to click magic link in email */}
         {step === "otp_sent" && (
           <div className="space-y-4 text-center">
