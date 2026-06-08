@@ -43,29 +43,43 @@ const ModerationDialog = ({ open, onOpenChange }: Props) => {
   const [selectedBanned, setSelectedBanned] = useState(false);
   const [selectedIsMod, setSelectedIsMod] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isDefaultMod, setIsDefaultMod] = useState(false);
+  const [isDuoMod, setIsDuoMod] = useState(false);
+  const [selectedIsDuoMod, setSelectedIsDuoMod] = useState(false);
   const [reason, setReason] = useState("");
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
 
   const reset = () => {
     setQuery(""); setResults([]); setSelected(null);
-    setAction(null); setReason(""); setMessage(""); setSelectedBanned(false); setSelectedIsMod(false);
+    setAction(null); setReason(""); setMessage(""); setSelectedBanned(false); setSelectedIsMod(false); setSelectedIsDuoMod(false);
   };
 
   useEffect(() => {
     if (!user) return;
-    supabase.rpc("has_role", { _user_id: user.id, _role: "admin" }).then(({ data }) => setIsAdmin(!!data));
+    (async () => {
+      const [{ data: adm }, { data: defMod }, { data: duo }] = await Promise.all([
+        supabase.rpc("has_role", { _user_id: user.id, _role: "admin" }),
+        supabase.rpc("has_role", { _user_id: user.id, _role: "default_mod" as any }),
+        supabase.rpc("has_role", { _user_id: user.id, _role: "duo_mod" as any }),
+      ]);
+      setIsAdmin(!!adm);
+      setIsDefaultMod(!!defMod);
+      setIsDuoMod(!!duo);
+    })();
   }, [user]);
 
   useEffect(() => {
-    if (!selected) { setSelectedBanned(false); setSelectedIsMod(false); return; }
+    if (!selected) { setSelectedBanned(false); setSelectedIsMod(false); setSelectedIsDuoMod(false); return; }
     (async () => {
-      const [{ data: banned }, { data: isMod }] = await Promise.all([
+      const [{ data: banned }, { data: isMod }, { data: isDuo }] = await Promise.all([
         supabase.rpc("is_user_banned", { _user_id: selected.id }),
-        supabase.rpc("has_role", { _user_id: selected.id, _role: "moderator" }),
+        supabase.rpc("has_role", { _user_id: selected.id, _role: "default_mod" as any }),
+        supabase.rpc("has_role", { _user_id: selected.id, _role: "duo_mod" as any }),
       ]);
       setSelectedBanned(!!banned);
       setSelectedIsMod(!!isMod);
+      setSelectedIsDuoMod(!!isDuo);
     })();
   }, [selected]);
 
@@ -103,34 +117,36 @@ const ModerationDialog = ({ open, onOpenChange }: Props) => {
   };
 
   const runPromote = async () => {
-    if (!selected) return;
+    if (!selected || !user) return;
     setBusy(true);
     const { error } = await supabase
       .from("user_roles")
-      .insert({ user_id: selected.id, role: "moderator" });
+      .insert({ user_id: selected.id, role: "duo_mod" as any });
+    if (!error || error.message.includes("duplicate")) {
+      await supabase
+        .from("mod_assignments" as any)
+        .upsert({ duo_mod_id: selected.id, assigned_by: user.id }, { onConflict: "duo_mod_id" });
+    }
     setBusy(false);
     if (error && !error.message.includes("duplicate")) {
       toast({ title: isTr ? "Hata" : "Error", description: error.message, variant: "destructive" });
       return;
     }
-    toast({ title: isTr ? "Moderatör yapıldı" : "Promoted to moderator" });
+    toast({ title: isTr ? "Duo Mod yapıldı" : "Promoted to Duo Mod" });
     reset(); onOpenChange(false);
   };
 
   const runDemote = async () => {
     if (!selected) return;
     setBusy(true);
-    const { error } = await supabase
+    await supabase
       .from("user_roles")
       .delete()
       .eq("user_id", selected.id)
-      .eq("role", "moderator");
+      .in("role", ["moderator", "duo_mod"] as any);
+    await supabase.from("mod_assignments" as any).delete().eq("duo_mod_id", selected.id);
     setBusy(false);
-    if (error) {
-      toast({ title: isTr ? "Hata" : "Error", description: error.message, variant: "destructive" });
-      return;
-    }
-    toast({ title: isTr ? "Moderatörlük kaldırıldı" : "Moderator removed" });
+    toast({ title: isTr ? "Duo Mod kaldırıldı" : "Duo Mod removed" });
     reset(); onOpenChange(false);
   };
 
@@ -268,27 +284,27 @@ const ModerationDialog = ({ open, onOpenChange }: Props) => {
 
             {!action ? (
               <div className="grid grid-cols-2 gap-2">
-                {selectedBanned ? (
+                {selectedBanned && !isDuoMod ? (
                   <Button variant="default" onClick={() => setAction("unban")} className="flex-col h-20 gap-1 bg-green-600 hover:bg-green-700 text-white">
                     <Unlock className="w-5 h-5" />
                     <span className="text-xs">{isTr ? "Banı Aç" : "Unban"}</span>
                   </Button>
-                ) : (
+                ) : !selectedBanned ? (
                   <Button variant="destructive" onClick={() => setAction("ban")} className="flex-col h-20 gap-1">
                     <Ban className="w-5 h-5" />
                     <span className="text-xs">{isTr ? "Banla" : "Ban"}</span>
                   </Button>
-                )}
-                {isAdmin && (
-                  selectedIsMod ? (
+                ) : null}
+                {(isAdmin || isDefaultMod) && (
+                  (selectedIsMod || selectedIsDuoMod) ? (
                     <Button variant="secondary" onClick={runDemote} disabled={busy} className="flex-col h-20 gap-1 bg-orange-500/20 hover:bg-orange-500/30 text-orange-300 border border-orange-500/40">
                       {busy ? <Loader2 className="w-5 h-5 animate-spin" /> : <ShieldOff className="w-5 h-5" />}
-                      <span className="text-xs">{isTr ? "Modluğu Kaldır" : "Demote"}</span>
+                      <span className="text-xs">{isTr ? "Modluğu Kaldır" : "Remove Mod"}</span>
                     </Button>
                   ) : (
                     <Button variant="secondary" onClick={() => setAction("promote")} className="flex-col h-20 gap-1">
                       <Shield className="w-5 h-5" />
-                      <span className="text-xs">{isTr ? "Mod Yap" : "Promote"}</span>
+                      <span className="text-xs">{isTr ? "Duo Mod Yap" : "Make Duo Mod"}</span>
                     </Button>
                   )
                 )}

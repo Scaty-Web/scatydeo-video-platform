@@ -98,6 +98,26 @@ const ReportVideoDialog = ({ videoId, videoTitle }: ReportVideoDialogProps) => {
         });
       }
     } else {
+      // Route report to Duo Mod first, fallback to Default Mod / Admin
+      try {
+        const { data: duoId } = await supabase.rpc("get_report_recipient" as any);
+        let recipientId: string | null = (duoId as any) || null;
+        if (!recipientId) {
+          const { data: defId } = await supabase.rpc("get_default_mod_recipient" as any);
+          recipientId = (defId as any) || null;
+        }
+        if (recipientId) {
+          await supabase.from("notifications").insert({
+            user_id: recipientId,
+            type: "moderation",
+            title: "Yeni Rapor",
+            message: `"${videoTitle}" videosu raporlandı. Sebep: ${fullReason}`,
+            link: `/watch/${videoId}`,
+          });
+        }
+      } catch (e) {
+        console.error("report routing failed", e);
+      }
       toast({
         title: t.report.reportSent,
         description: t.report.reportSentDesc,
