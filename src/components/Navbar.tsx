@@ -25,6 +25,7 @@ interface NavbarProps {
 const Navbar = ({ onToggleSidebar }: NavbarProps) => {
   const [isModerator, setIsModerator] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isDuoMod, setIsDuoMod] = useState(false);
   const [modOpen, setModOpen] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const { user, signOut } = useAuth();
@@ -42,12 +43,15 @@ const Navbar = ({ onToggleSidebar }: NavbarProps) => {
 
   const checkModeratorStatus = async () => {
     if (!user) return;
-    const [{ data: mod }, { data: adm }] = await Promise.all([
+    const [{ data: mod }, { data: adm }, { data: defMod }, { data: duo }] = await Promise.all([
       supabase.rpc('has_role', { _user_id: user.id, _role: 'moderator' }),
       supabase.rpc('has_role', { _user_id: user.id, _role: 'admin' }),
+      supabase.rpc('has_role', { _user_id: user.id, _role: 'default_mod' as any }),
+      supabase.rpc('has_role', { _user_id: user.id, _role: 'duo_mod' as any }),
     ]);
-    setIsModerator(!!mod);
+    setIsModerator(!!mod || !!defMod);
     setIsAdmin(!!adm);
+    setIsDuoMod(!!duo);
   };
 
   const fetchAvatar = async () => {
@@ -116,7 +120,7 @@ const Navbar = ({ onToggleSidebar }: NavbarProps) => {
           </button>
 
           {/* MOD button: only for admins/moderators */}
-          {user && (isModerator || isAdmin) && (
+          {user && (isModerator || isAdmin || isDuoMod) && (
             <button
               onClick={() => setModOpen(true)}
               className="m3-state-layer px-2.5 h-8 rounded-full text-xs font-bold tracking-wider bg-primary/20 text-primary border border-primary/40 hover:bg-primary/30"
