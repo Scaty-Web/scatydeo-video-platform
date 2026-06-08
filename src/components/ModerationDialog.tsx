@@ -58,13 +58,12 @@ const ModerationDialog = ({ open, onOpenChange }: Props) => {
   useEffect(() => {
     if (!user) return;
     (async () => {
-      const [{ data: adm }, { data: defMod }, { data: duo }] = await Promise.all([
+      const [{ data: adm }, { data: duo }] = await Promise.all([
         supabase.rpc("has_role", { _user_id: user.id, _role: "admin" }),
-        supabase.rpc("has_role", { _user_id: user.id, _role: "default_mod" as any }),
         supabase.rpc("has_role", { _user_id: user.id, _role: "duo_mod" as any }),
       ]);
       setIsAdmin(!!adm);
-      setIsDefaultMod(!!defMod);
+      setIsDefaultMod(!!adm); // Default Mod = admin (Lattesiber)
       setIsDuoMod(!!duo);
     })();
   }, [user]);
@@ -72,13 +71,13 @@ const ModerationDialog = ({ open, onOpenChange }: Props) => {
   useEffect(() => {
     if (!selected) { setSelectedBanned(false); setSelectedIsMod(false); setSelectedIsDuoMod(false); return; }
     (async () => {
-      const [{ data: banned }, { data: isMod }, { data: isDuo }] = await Promise.all([
+      const [{ data: banned }, { data: isAdm }, { data: isDuo }] = await Promise.all([
         supabase.rpc("is_user_banned", { _user_id: selected.id }),
-        supabase.rpc("has_role", { _user_id: selected.id, _role: "default_mod" as any }),
+        supabase.rpc("has_role", { _user_id: selected.id, _role: "admin" }),
         supabase.rpc("has_role", { _user_id: selected.id, _role: "duo_mod" as any }),
       ]);
       setSelectedBanned(!!banned);
-      setSelectedIsMod(!!isMod);
+      setSelectedIsMod(!!isAdm);
       setSelectedIsDuoMod(!!isDuo);
     })();
   }, [selected]);
