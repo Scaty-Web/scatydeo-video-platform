@@ -61,11 +61,11 @@ const Channel = () => {
   useEffect(() => {
     if (!profile) return;
     (async () => {
-      const [{ data: isDef }, { data: isDuo }] = await Promise.all([
-        supabase.rpc("has_role", { _user_id: profile.id, _role: "default_mod" as any }),
+      const [{ data: isAdm }, { data: isDuo }] = await Promise.all([
+        supabase.rpc("has_role", { _user_id: profile.id, _role: "admin" as any }),
         supabase.rpc("has_role", { _user_id: profile.id, _role: "duo_mod" as any }),
       ]);
-      if (isDef) setModBadge("default");
+      if (isAdm) setModBadge("default");
       else if (isDuo) setModBadge("duo");
       else setModBadge(null);
     })();
