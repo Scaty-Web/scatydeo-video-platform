@@ -50,12 +50,26 @@ const Channel = () => {
   const [switches, setSwitches] = useState<SwitchRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [isSubscribed, setIsSubscribed] = useState(false);
+  const [modBadge, setModBadge] = useState<"default" | "duo" | null>(null);
 
   useEffect(() => {
     if (username) {
       fetchProfile();
     }
   }, [username]);
+
+  useEffect(() => {
+    if (!profile) return;
+    (async () => {
+      const [{ data: isDef }, { data: isDuo }] = await Promise.all([
+        supabase.rpc("has_role", { _user_id: profile.id, _role: "default_mod" as any }),
+        supabase.rpc("has_role", { _user_id: profile.id, _role: "duo_mod" as any }),
+      ]);
+      if (isDef) setModBadge("default");
+      else if (isDuo) setModBadge("duo");
+      else setModBadge(null);
+    })();
+  }, [profile]);
 
   useEffect(() => {
     if (profile && user) {
@@ -199,7 +213,19 @@ const Channel = () => {
           </Avatar>
 
           <div className="flex-1 text-center md:text-left">
-            <h1 className="text-3xl font-bold">{profile.display_name}</h1>
+            <h1 className="text-3xl font-bold flex items-center gap-2 flex-wrap justify-center md:justify-start">
+              {profile.display_name}
+              {modBadge === "default" && (
+                <span className="text-sm font-bold px-2 py-0.5 rounded-full bg-primary/20 text-primary border border-primary/40">
+                  Default Mod
+                </span>
+              )}
+              {modBadge === "duo" && (
+                <span className="text-sm font-bold px-2 py-0.5 rounded-full bg-green-500/20 text-green-400 border border-green-500/40">
+                  Duo Mod
+                </span>
+              )}
+            </h1>
             <p className="text-muted-foreground">@{profile.username}</p>
             <div className="flex flex-wrap items-center justify-center md:justify-start gap-4 mt-2 text-sm text-muted-foreground">
               <span className="flex items-center gap-1">
