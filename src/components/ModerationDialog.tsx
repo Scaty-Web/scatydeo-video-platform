@@ -284,27 +284,27 @@ const ModerationDialog = ({ open, onOpenChange }: Props) => {
 
             {!action ? (
               <div className="grid grid-cols-2 gap-2">
-                {selectedBanned ? (
+                {selectedBanned && !isDuoMod ? (
                   <Button variant="default" onClick={() => setAction("unban")} className="flex-col h-20 gap-1 bg-green-600 hover:bg-green-700 text-white">
                     <Unlock className="w-5 h-5" />
                     <span className="text-xs">{isTr ? "Banı Aç" : "Unban"}</span>
                   </Button>
-                ) : (
+                ) : !selectedBanned ? (
                   <Button variant="destructive" onClick={() => setAction("ban")} className="flex-col h-20 gap-1">
                     <Ban className="w-5 h-5" />
                     <span className="text-xs">{isTr ? "Banla" : "Ban"}</span>
                   </Button>
-                )}
-                {isAdmin && (
-                  selectedIsMod ? (
+                ) : null}
+                {(isAdmin || isDefaultMod) && (
+                  (selectedIsMod || selectedIsDuoMod) ? (
                     <Button variant="secondary" onClick={runDemote} disabled={busy} className="flex-col h-20 gap-1 bg-orange-500/20 hover:bg-orange-500/30 text-orange-300 border border-orange-500/40">
                       {busy ? <Loader2 className="w-5 h-5 animate-spin" /> : <ShieldOff className="w-5 h-5" />}
-                      <span className="text-xs">{isTr ? "Modluğu Kaldır" : "Demote"}</span>
+                      <span className="text-xs">{isTr ? "Modluğu Kaldır" : "Remove Mod"}</span>
                     </Button>
                   ) : (
                     <Button variant="secondary" onClick={() => setAction("promote")} className="flex-col h-20 gap-1">
                       <Shield className="w-5 h-5" />
-                      <span className="text-xs">{isTr ? "Mod Yap" : "Promote"}</span>
+                      <span className="text-xs">{isTr ? "Duo Mod Yap" : "Make Duo Mod"}</span>
                     </Button>
                   )
                 )}
