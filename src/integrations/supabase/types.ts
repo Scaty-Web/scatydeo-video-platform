@@ -90,6 +90,27 @@ export type Database = {
           },
         ]
       }
+      mod_assignments: {
+        Row: {
+          assigned_by: string
+          created_at: string
+          duo_mod_id: string
+          id: string
+        }
+        Insert: {
+          assigned_by: string
+          created_at?: string
+          duo_mod_id: string
+          id?: string
+        }
+        Update: {
+          assigned_by?: string
+          created_at?: string
+          duo_mod_id?: string
+          id?: string
+        }
+        Relationships: []
+      }
       news: {
         Row: {
           content: string
@@ -832,6 +853,7 @@ export type Database = {
           reason: string
         }[]
       }
+      get_default_mod_recipient: { Args: never; Returns: string }
       get_profile_by_email: {
         Args: { _email: string }
         Returns: {
@@ -841,6 +863,7 @@ export type Database = {
           username: string
         }[]
       }
+      get_report_recipient: { Args: never; Returns: string }
       get_switch_like_count: {
         Args: { target_switch_id: string }
         Returns: number
@@ -893,7 +916,7 @@ export type Database = {
       is_user_banned: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
-      app_role: "admin" | "moderator" | "user"
+      app_role: "admin" | "moderator" | "user" | "default_mod" | "duo_mod"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1021,7 +1044,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "moderator", "user"],
+      app_role: ["admin", "moderator", "user", "default_mod", "duo_mod"],
     },
   },
 } as const
