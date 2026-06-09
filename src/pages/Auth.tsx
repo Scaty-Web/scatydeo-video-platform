@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useLanguage } from "@/hooks/useLanguage";
@@ -11,6 +11,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { getAvatarUrl } from "@/lib/defaults";
 import { z } from "zod";
+import viravoAsset from "@/assets/viravo.mp3.asset.json";
+
 
 type Step = "email" | "password" | "signup" | "otp_sent" | "otp_verify" | "post_otp" | "reset_password";
 
@@ -30,6 +32,16 @@ const Auth = () => {
   const { signIn, signUp, user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const audioRef = useRef<HTMLAudioElement>(null);
+
+  // Viravo background music — auto-play & loop
+  useEffect(() => {
+    const a = audioRef.current;
+    if (!a) return;
+    a.loop = true;
+    a.volume = 0.4;
+    a.play().catch(() => {});
+  }, []);
 
   const emailSchema = z.string().email(t.auth.validEmail);
   const passwordSchema = z.string().min(6, t.auth.minPassword);
@@ -383,6 +395,9 @@ const Auth = () => {
           {t.auth.termsText} <a href="/rules" className="text-primary hover:underline">{t.auth.termsLink}</a> {t.auth.termsAccept}
         </p>
       </div>
+
+      {/* Viravo background music */}
+      <audio ref={audioRef} src={viravoAsset.url} preload="auto" />
     </div>
   );
 };

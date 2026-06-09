@@ -27,7 +27,10 @@ const Viravo = () => {
     if (!a) return;
     const onTime = () => setCurrent(a.currentTime);
     const onMeta = () => setDuration(a.duration);
-    const onEnd = () => setPlaying(false);
+    const onEnd = () => {
+      a.currentTime = 0;
+      a.play().then(() => setPlaying(true)).catch(() => setPlaying(false));
+    };
     a.addEventListener("timeupdate", onTime);
     a.addEventListener("loadedmetadata", onMeta);
     a.addEventListener("ended", onEnd);
