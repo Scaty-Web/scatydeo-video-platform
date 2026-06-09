@@ -159,7 +159,7 @@ const Upload = () => {
       console.error("Upload error:", error);
       toast({
         title: t.upload.uploadError,
-        description: error.message || t.upload.uploadErrorDesc,
+        description: t.upload.uploadErrorDesc,
         variant: "destructive",
       });
     } finally {

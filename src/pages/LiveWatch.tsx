@@ -175,7 +175,7 @@ const LiveWatch = () => {
       }).then(() => {});
       setNewMessage("");
     } catch (err: any) {
-      toast({ title: t.common.error, description: err.message, variant: "destructive" });
+      toast({ title: t.common.error, description: "İşlem başarısız oldu. Lütfen tekrar deneyin.", variant: "destructive" });
     }
     setSending(false);
   };

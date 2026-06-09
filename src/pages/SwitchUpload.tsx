@@ -143,7 +143,7 @@ const SwitchUpload = () => {
       navigate(`/switch/${data.id}`);
     } catch (err: any) {
       console.error(err);
-      toast({ title: t.switch.uploadErr, description: err.message, variant: "destructive" });
+      toast({ title: t.switch.uploadErr, description: "İşlem başarısız oldu. Lütfen tekrar deneyin.", variant: "destructive" });
     } finally {
       setUploading(false);
       setProgress(0);

@@ -108,7 +108,7 @@ const ModerationDialog = ({ open, onOpenChange }: Props) => {
     });
     setBusy(false);
     if (error) {
-      toast({ title: isTr ? "Hata" : "Error", description: error.message, variant: "destructive" });
+      toast({ title: isTr ? "Hata" : "Error", description: "İşlem başarısız oldu. Lütfen tekrar deneyin.", variant: "destructive" });
       return;
     }
     toast({ title: isTr ? "Kullanıcı banlandı" : "User banned" });
@@ -128,7 +128,7 @@ const ModerationDialog = ({ open, onOpenChange }: Props) => {
     }
     setBusy(false);
     if (error && !error.message.includes("duplicate")) {
-      toast({ title: isTr ? "Hata" : "Error", description: error.message, variant: "destructive" });
+      toast({ title: isTr ? "Hata" : "Error", description: "İşlem başarısız oldu. Lütfen tekrar deneyin.", variant: "destructive" });
       return;
     }
     toast({ title: isTr ? "Duo Mod yapıldı" : "Promoted to Duo Mod" });
@@ -164,7 +164,7 @@ const ModerationDialog = ({ open, onOpenChange }: Props) => {
     });
     setBusy(false);
     if (error) {
-      toast({ title: isTr ? "Hata" : "Error", description: error.message, variant: "destructive" });
+      toast({ title: isTr ? "Hata" : "Error", description: "İşlem başarısız oldu. Lütfen tekrar deneyin.", variant: "destructive" });
       return;
     }
     toast({ title: isTr ? "Mesaj gönderildi" : "Message sent" });
