@@ -32,6 +32,16 @@ const Auth = () => {
   const { signIn, signUp, user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const audioRef = useRef<HTMLAudioElement>(null);
+
+  // Viravo background music — auto-play & loop
+  useEffect(() => {
+    const a = audioRef.current;
+    if (!a) return;
+    a.loop = true;
+    a.volume = 0.4;
+    a.play().catch(() => {});
+  }, []);
 
   const emailSchema = z.string().email(t.auth.validEmail);
   const passwordSchema = z.string().min(6, t.auth.minPassword);
