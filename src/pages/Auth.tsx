@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useLanguage } from "@/hooks/useLanguage";
@@ -11,6 +11,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { getAvatarUrl } from "@/lib/defaults";
 import { z } from "zod";
+import viravoAsset from "@/assets/viravo.mp3.asset.json";
+
 
 type Step = "email" | "password" | "signup" | "otp_sent" | "otp_verify" | "post_otp" | "reset_password";
 
