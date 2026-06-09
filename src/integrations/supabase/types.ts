@@ -913,6 +913,7 @@ export type Database = {
         Args: { target_video_id: string }
         Returns: undefined
       }
+      is_calling_user_banned: { Args: never; Returns: boolean }
       is_user_banned: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {

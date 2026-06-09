@@ -111,7 +111,7 @@ const Auth = () => {
     const { error } = await signUp(email, password, username);
     setIsLoading(false);
     if (error) {
-      toast({ title: t.auth.signupFailed, description: error.message, variant: "destructive" });
+      toast({ title: t.auth.signupFailed, description: "İşlem başarısız oldu. Lütfen tekrar deneyin.", variant: "destructive" });
     } else {
       toast({ title: t.auth.signupSuccess, description: t.auth.accountCreated });
     }
@@ -128,7 +128,7 @@ const Auth = () => {
     });
     setIsLoading(false);
     if (error) {
-      toast({ title: t.common.error, description: error.message, variant: "destructive" });
+      toast({ title: t.common.error, description: "İşlem başarısız oldu. Lütfen tekrar deneyin.", variant: "destructive" });
       return;
     }
     setStep("otp_sent");
@@ -164,7 +164,7 @@ const Auth = () => {
     const { error } = await supabase.auth.updateUser({ password: newPassword });
     setIsLoading(false);
     if (error) {
-      toast({ title: t.common.error, description: error.message, variant: "destructive" });
+      toast({ title: t.common.error, description: "İşlem başarısız oldu. Lütfen tekrar deneyin.", variant: "destructive" });
       return;
     }
     toast({ title: "Şifre güncellendi", description: "Yeni şifrenle giriş yaptın." });

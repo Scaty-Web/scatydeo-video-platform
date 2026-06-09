@@ -385,7 +385,7 @@ const PrivacyTab = ({ t, user, signOut }: { t: any; user: any; signOut: () => vo
     const { error } = await supabase.auth.updateUser({ password: newPassword });
 
     if (error) {
-      toast({ title: t.common.error, description: error.message, variant: "destructive" });
+      toast({ title: t.common.error, description: "İşlem başarısız oldu. Lütfen tekrar deneyin.", variant: "destructive" });
     } else {
       toast({ title: t.common.success, description: t.settings.passwordUpdated });
       setCurrentPassword("");

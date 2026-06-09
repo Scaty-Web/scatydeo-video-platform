@@ -55,7 +55,7 @@ const ManageVideos = () => {
     const { error } = await supabase.from("videos").update({ is_public: next }).eq("id", v.id);
     setBusy((b) => ({ ...b, [v.id]: false }));
     if (error) {
-      toast({ title: isTr ? "Hata" : "Error", description: error.message, variant: "destructive" });
+      toast({ title: isTr ? "Hata" : "Error", description: "İşlem başarısız oldu. Lütfen tekrar deneyin.", variant: "destructive" });
       return;
     }
     setVideos((arr) => arr.map((x) => x.id === v.id ? { ...x, is_public: next } : x));
@@ -68,7 +68,7 @@ const ManageVideos = () => {
     const { error } = await supabase.from("videos").delete().eq("id", v.id);
     setBusy((b) => ({ ...b, [v.id]: false }));
     if (error) {
-      toast({ title: isTr ? "Hata" : "Error", description: error.message, variant: "destructive" });
+      toast({ title: isTr ? "Hata" : "Error", description: "İşlem başarısız oldu. Lütfen tekrar deneyin.", variant: "destructive" });
       return;
     }
     setVideos((arr) => arr.filter((x) => x.id !== v.id));

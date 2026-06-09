@@ -281,7 +281,7 @@ const Watch = () => {
     } catch (err: any) {
       toast({
         title: language === "tr" ? "Özet oluşturulamadı" : "Could not generate summary",
-        description: err.message || "Error",
+        description: "Error",
         variant: "destructive",
       });
     } finally {

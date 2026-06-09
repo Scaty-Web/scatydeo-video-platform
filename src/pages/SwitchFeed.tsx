@@ -296,7 +296,7 @@ const SwitchFeed = () => {
       .select()
       .single();
     if (error) {
-      toast({ title: t.common.error, description: error.message, variant: "destructive" });
+      toast({ title: t.common.error, description: "İşlem başarısız oldu. Lütfen tekrar deneyin.", variant: "destructive" });
       return;
     }
     const { data: prof } = await supabase
@@ -317,7 +317,7 @@ const SwitchFeed = () => {
       .from("switch_reports")
       .insert({ switch_id: active.id, reporter_id: user.id, reason: reportReason.trim() });
     if (error) {
-      toast({ title: t.common.error, description: error.message, variant: "destructive" });
+      toast({ title: t.common.error, description: "İşlem başarısız oldu. Lütfen tekrar deneyin.", variant: "destructive" });
       return;
     }
     toast({ title: t.switch.reportSent });

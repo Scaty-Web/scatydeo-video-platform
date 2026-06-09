@@ -226,7 +226,7 @@ const LiveStream = () => {
     }).select("id").single();
 
     if (error) {
-      toast({ title: t.common.error, description: error.message, variant: "destructive" });
+      toast({ title: t.common.error, description: "İşlem başarısız oldu. Lütfen tekrar deneyin.", variant: "destructive" });
       return;
     }
 
@@ -360,7 +360,7 @@ const LiveStream = () => {
 
       toast({ title: t.stream.saved, description: t.stream.savedDesc });
     } catch (err: any) {
-      toast({ title: t.common.error, description: err.message, variant: "destructive" });
+      toast({ title: t.common.error, description: "İşlem başarısız oldu. Lütfen tekrar deneyin.", variant: "destructive" });
     } finally {
       setSaving(false);
       cleanup();

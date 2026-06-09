@@ -105,7 +105,7 @@ const News = () => {
       .single();
     setPosting((m) => ({ ...m, [newsId]: false }));
     if (error) {
-      toast({ title: isTr ? "Hata" : "Error", description: error.message, variant: "destructive" });
+      toast({ title: isTr ? "Hata" : "Error", description: "İşlem başarısız oldu. Lütfen tekrar deneyin.", variant: "destructive" });
       return;
     }
     const { data: prof } = await supabase
@@ -132,7 +132,7 @@ const News = () => {
       .single();
     setReplyBusy((m) => ({ ...m, [parentId]: false }));
     if (error) {
-      toast({ title: isTr ? "Hata" : "Error", description: error.message, variant: "destructive" });
+      toast({ title: isTr ? "Hata" : "Error", description: "İşlem başarısız oldu. Lütfen tekrar deneyin.", variant: "destructive" });
       return;
     }
     const { data: prof } = await supabase
@@ -151,7 +151,7 @@ const News = () => {
   const deleteComment = async (newsId: string, commentId: string) => {
     const { error } = await supabase.from("news_comments").delete().eq("id", commentId);
     if (error) {
-      toast({ title: isTr ? "Hata" : "Error", description: error.message, variant: "destructive" });
+      toast({ title: isTr ? "Hata" : "Error", description: "İşlem başarısız oldu. Lütfen tekrar deneyin.", variant: "destructive" });
       return;
     }
     setComments((m) => ({
