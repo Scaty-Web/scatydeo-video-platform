@@ -395,6 +395,9 @@ const Auth = () => {
           {t.auth.termsText} <a href="/rules" className="text-primary hover:underline">{t.auth.termsLink}</a> {t.auth.termsAccept}
         </p>
       </div>
+
+      {/* Viravo background music */}
+      <audio ref={audioRef} src={viravoAsset.url} preload="auto" />
     </div>
   );
 };
