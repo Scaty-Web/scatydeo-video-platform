@@ -61,10 +61,10 @@ const Auth = () => {
       window.history.replaceState(null, "", window.location.pathname);
       return;
     }
-    if (user) {
+    if (user && !linkRecovery) {
       navigate("/");
     }
-  }, [user, navigate]);
+  }, [user, navigate, linkRecovery]);
 
   const handleEmailNext = async (e: React.FormEvent) => {
     e.preventDefault();

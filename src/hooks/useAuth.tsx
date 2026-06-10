@@ -29,10 +29,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     );
 
     // THEN check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
+
+      // Validate the token actually works (catches stale tokens missing 'sub' claim).
+      if (session) {
+        const { error } = await supabase.auth.getUser();
+        if (error) {
+          // Token is bad — sign the user out to clean localStorage.
+          await supabase.auth.signOut();
+          setSession(null);
+          setUser(null);
+        }
+      }
     });
 
     return () => subscription.unsubscribe();
