@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Play, Search, Menu, Bell, User, Settings, LogOut, Upload, Shield, SlidersHorizontal } from "lucide-react";
+import { Play, Search, Menu, Bell, User, Settings, LogOut, Upload, Shield, SlidersHorizontal, Video } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
@@ -106,6 +106,13 @@ const Navbar = ({ onToggleSidebar }: NavbarProps) => {
             </button>
           </form>
         </div>
+
+        {/* FoCAM screen recorder shortcut */}
+        <Link to="/focam" title="Scatydeo FoCAM" className="hidden sm:flex">
+          <Button variant="ghost" size="icon" className="rounded-full">
+            <Video className="w-5 h-5" />
+          </Button>
+        </Link>
 
         {/* Right: Actions */}
         <div className="flex items-center gap-1">

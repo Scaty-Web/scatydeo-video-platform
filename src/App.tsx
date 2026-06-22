@@ -32,6 +32,7 @@ import SwitchUpload from "./pages/SwitchUpload";
 import News from "./pages/News";
 import ManageVideos from "./pages/ManageVideos";
 import Viravo from "./pages/Viravo";
+import FoCAM from "./pages/FoCAM";
 
 const queryClient = new QueryClient();
 
@@ -80,6 +81,7 @@ const AppRoutes = () => {
       <Route path="/news" element={<News />} />
       <Route path="/manage/videos" element={<ManageVideos />} />
       <Route path="/viravo" element={<Viravo />} />
+      <Route path="/focam" element={<FoCAM />} />
       <Route path="/banned" element={<Banned />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
