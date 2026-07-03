@@ -54,7 +54,12 @@ const FoCAM = () => {
       const display = await navigator.mediaDevices.getDisplayMedia({
         video: { frameRate: 30 } as any,
         audio: systemAudio
-          ? ({ echoCancellation: false, noiseSuppression: false, autoGainControl: false } as any)
+          ? ({
+              echoCancellation: false,
+              noiseSuppression: false,
+              autoGainControl: false,
+              suppressLocalAudioPlayback: false,
+            } as any)
           : false,
       });
       displayStreamRef.current = display;
@@ -62,30 +67,27 @@ const FoCAM = () => {
       if (systemAudio && display.getAudioTracks().length === 0) {
         toast({
           title: "Sistem sesi",
-          description: "Paylaşım penceresinde 'Sesi paylaş' kutusunu işaretlemeniz gerekir.",
+          description: "Chrome/Edge'de 'Sekmeyi paylaş' veya 'Tüm ekran' seçip 'Sesi paylaş' kutusunu işaretleyin. Firefox/Safari sistem sesini desteklemez.",
         });
       }
 
-      // Mix audio tracks
+      // Combine audio tracks. If only one source, pass through directly (more reliable).
       const audioTracks: MediaStreamTrack[] = [];
-      const ctx = new AudioContext();
-      audioCtxRef.current = ctx;
-      if (ctx.state === "suspended") {
-        try { await ctx.resume(); } catch {}
+      const sysTracks = display.getAudioTracks();
+      const micTracks = mic?.getAudioTracks() ?? [];
+      if (sysTracks.length && micTracks.length) {
+        const ctx = new AudioContext();
+        audioCtxRef.current = ctx;
+        if (ctx.state === "suspended") { try { await ctx.resume(); } catch {} }
+        const dest = ctx.createMediaStreamDestination();
+        ctx.createMediaStreamSource(new MediaStream([sysTracks[0]])).connect(dest);
+        ctx.createMediaStreamSource(new MediaStream([micTracks[0]])).connect(dest);
+        audioTracks.push(...dest.stream.getAudioTracks());
+      } else if (sysTracks.length) {
+        audioTracks.push(sysTracks[0]);
+      } else if (micTracks.length) {
+        audioTracks.push(micTracks[0]);
       }
-      const dest = ctx.createMediaStreamDestination();
-      let hasAudio = false;
-      if (display.getAudioTracks().length) {
-        const sysSrc = ctx.createMediaStreamSource(new MediaStream([display.getAudioTracks()[0]]));
-        sysSrc.connect(dest);
-        hasAudio = true;
-      }
-      if (mic && mic.getAudioTracks().length) {
-        const micSrc = ctx.createMediaStreamSource(new MediaStream([mic.getAudioTracks()[0]]));
-        micSrc.connect(dest);
-        hasAudio = true;
-      }
-      if (hasAudio) audioTracks.push(...dest.stream.getAudioTracks());
 
       const combined = new MediaStream([...display.getVideoTracks(), ...audioTracks]);
       combinedStreamRef.current = combined;
@@ -217,12 +219,16 @@ const FoCAM = () => {
       <Navbar />
       <main className="pt-20 pb-16 px-4 max-w-3xl mx-auto">
         <div className="text-center mb-8">
-          <h1 className="text-5xl md:text-6xl font-bold tracking-tight">
+          <h1 className="text-5xl md:text-6xl font-bold tracking-tight inline-flex items-baseline gap-3 flex-wrap justify-center">
             <span className="font-sans">Scatydeo </span>
             <span className="font-sans">fo</span>
             <span className="italic font-serif bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">CAM</span>
+            <span className="text-xs md:text-sm font-semibold uppercase tracking-widest px-2 py-1 rounded-full bg-primary/20 text-primary border border-primary/40 align-middle">Beta</span>
           </h1>
           <p className="text-muted-foreground mt-2">Tarayıcıdan ekran kaydı — hızlı, basit, indirilebilir.</p>
+          <p className="text-xs text-muted-foreground/80 mt-1">
+            Sistem sesi için Chrome/Edge kullanın ve paylaşım penceresinde <b>“Sesi paylaş”</b> kutusunu işaretleyin.
+          </p>
         </div>
 
         <div className="rounded-2xl border border-border bg-card p-6 space-y-6">
