@@ -273,6 +273,7 @@ const Watch = () => {
           title: video.title,
           description: video.description,
           comments: comments.slice(0, 5).map(c => c.content),
+          video_url: video.video_url,
         },
       });
 
