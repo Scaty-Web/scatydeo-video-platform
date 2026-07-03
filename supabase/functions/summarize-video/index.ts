@@ -33,7 +33,7 @@ serve(async (req) => {
       });
     }
 
-    const { title, description, comments } = await req.json();
+    const { title, description, comments, video_url } = await req.json();
 
     if (!title) {
       return new Response(JSON.stringify({ error: "Title is required" }), {
@@ -46,15 +46,17 @@ serve(async (req) => {
     const safeTitle = String(title).slice(0, 500);
     const safeDescription = description ? String(description).slice(0, 1000) : "";
     const safeComments = Array.isArray(comments) ? comments.slice(0, 5).map((c: any) => String(c).slice(0, 200)) : [];
+    const safeVideoUrl = typeof video_url === "string" && /^https?:\/\//i.test(video_url) ? video_url.slice(0, 1000) : "";
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
 
-    const prompt = `Summarize the following video content in a concise paragraph (3-5 sentences). Write the summary in the same language as the title.
+    const prompt = `Summarize the following video content in a concise paragraph (3-5 sentences). Write the summary in the same language as the title. ${safeVideoUrl ? "If you can access the video URL, analyze the actual video content (visuals + audio) in addition to the metadata." : ""}
 
 Video Title: ${safeTitle}
 ${safeDescription ? `Description: ${safeDescription}` : ""}
 ${safeComments.length > 0 ? `Top Comments: ${safeComments.join(", ")}` : ""}
+${safeVideoUrl ? `Video URL: ${safeVideoUrl}` : ""}
 
 Provide a helpful summary that tells viewers what this video is about.`;
 
@@ -68,7 +70,15 @@ Provide a helpful summary that tells viewers what this video is about.`;
         model: "google/gemini-2.5-flash",
         messages: [
           { role: "system", content: "You are a helpful video content summarizer. Keep summaries concise and informative." },
-          { role: "user", content: prompt },
+          {
+            role: "user",
+            content: safeVideoUrl
+              ? [
+                  { type: "text", text: prompt },
+                  { type: "image_url", image_url: { url: safeVideoUrl } },
+                ]
+              : prompt,
+          },
         ],
       }),
     });
