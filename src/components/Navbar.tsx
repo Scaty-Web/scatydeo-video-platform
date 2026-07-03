@@ -255,7 +255,6 @@ const Navbar = ({ onToggleSidebar }: NavbarProps) => {
           )}
         </div>
       </div>
-      </div>
       )}
       <ModerationDialog open={modOpen} onOpenChange={setModOpen} />
     </nav>
