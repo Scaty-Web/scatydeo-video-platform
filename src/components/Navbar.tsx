@@ -17,6 +17,7 @@ import LanguageSwitcher from "./LanguageSwitcher";
 import { getAvatarUrl } from "@/lib/defaults";
 import SwitchLogo from "./SwitchLogo";
 import ModerationDialog from "./ModerationDialog";
+import { cn } from "@/lib/utils";
 
 interface NavbarProps {
   onToggleSidebar?: () => void;
@@ -254,7 +255,7 @@ const Navbar = ({ onToggleSidebar }: NavbarProps) => {
           )}
         </div>
       </div>
-      <ModerationDialog open={modOpen} onOpenChange={setModOpen} />
+      </div>
       )}
       <ModerationDialog open={modOpen} onOpenChange={setModOpen} />
     </nav>
