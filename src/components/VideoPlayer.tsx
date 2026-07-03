@@ -202,11 +202,19 @@ const VideoPlayer = ({ src, poster, className }: VideoPlayerProps) => {
   const toggleFullscreen = async () => {
     const container = containerRef.current;
     if (!container) return;
-
-    if (!document.fullscreenElement) {
-      await container.requestFullscreen();
-    } else {
-      await document.exitFullscreen();
+    try {
+      const anyDoc = document as any;
+      const anyEl = container as any;
+      const fsEl = document.fullscreenElement || anyDoc.webkitFullscreenElement || anyDoc.msFullscreenElement;
+      if (!fsEl) {
+        const req = container.requestFullscreen || anyEl.webkitRequestFullscreen || anyEl.msRequestFullscreen;
+        if (req) await req.call(container);
+      } else {
+        const exit = document.exitFullscreen || anyDoc.webkitExitFullscreen || anyDoc.msExitFullscreen;
+        if (exit) await exit.call(document);
+      }
+    } catch (err) {
+      console.warn("Fullscreen error:", err);
     }
   };
 
