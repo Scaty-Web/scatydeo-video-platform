@@ -24,6 +24,7 @@ import Trending from "./pages/Trending";
 import About from "./pages/About";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import V2Welcome from "./pages/V2Welcome";
+import V3Welcome from "./pages/V3Welcome";
 import LiveStream from "./pages/LiveStream";
 import LiveStreams from "./pages/LiveStreams";
 import LiveWatch from "./pages/LiveWatch";
@@ -72,6 +73,7 @@ const AppRoutes = () => {
       <Route path="/about" element={<About />} />
       <Route path="/privacy" element={<PrivacyPolicy />} />
       <Route path="/v2" element={<V2Welcome />} />
+      <Route path="/v3" element={<V3Welcome />} />
       <Route path="/stream" element={<LiveStream />} />
       <Route path="/lives" element={<LiveStreams />} />
       <Route path="/live/:id" element={<LiveWatch />} />

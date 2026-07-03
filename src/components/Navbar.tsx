@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Play, Search, Menu, Bell, User, Settings, LogOut, Upload, Shield, SlidersHorizontal, Video } from "lucide-react";
+import { Play, Search, Menu, Bell, User, Settings, LogOut, Upload, Shield, SlidersHorizontal, Video, ChevronUp, ChevronDown } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
@@ -17,6 +17,7 @@ import LanguageSwitcher from "./LanguageSwitcher";
 import { getAvatarUrl } from "@/lib/defaults";
 import SwitchLogo from "./SwitchLogo";
 import ModerationDialog from "./ModerationDialog";
+import { cn } from "@/lib/utils";
 
 interface NavbarProps {
   onToggleSidebar?: () => void;
@@ -28,6 +29,10 @@ const Navbar = ({ onToggleSidebar }: NavbarProps) => {
   const [isDuoMod, setIsDuoMod] = useState(false);
   const [modOpen, setModOpen] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [collapsed, setCollapsed] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    return localStorage.getItem("scatydeo_nav_collapsed") === "1";
+  });
   const { user, signOut } = useAuth();
   const { t } = useLanguage();
   const navigate = useNavigate();
@@ -63,8 +68,29 @@ const Navbar = ({ onToggleSidebar }: NavbarProps) => {
     navigate("/");
   };
 
+  const toggleCollapsed = () => {
+    const next = !collapsed;
+    setCollapsed(next);
+    localStorage.setItem("scatydeo_nav_collapsed", next ? "1" : "0");
+  };
+
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 bg-background border-b border-border h-14">
+    <nav
+      className={cn(
+        "fixed top-0 left-0 right-0 z-50 bg-background border-b border-border transition-all duration-200",
+        collapsed ? "h-6" : "h-14"
+      )}
+    >
+      {collapsed ? (
+        <button
+          onClick={toggleCollapsed}
+          className="w-full h-full flex items-center justify-center hover:bg-muted transition-colors"
+          title="Menüyü göster"
+          aria-label="Menüyü göster"
+        >
+          <ChevronDown className="w-4 h-4 text-muted-foreground" />
+        </button>
+      ) : (
       <div className="flex items-center justify-between h-full px-4">
         {/* Left: Menu + Logo */}
         <div className="flex items-center gap-2">
@@ -83,7 +109,7 @@ const Navbar = ({ onToggleSidebar }: NavbarProps) => {
         </div>
 
         {/* Center: Search */}
-        <div className="flex-1 max-w-xl mx-4 hidden sm:block">
+        <div className="flex-1 max-w-xl mx-4 hidden sm:flex items-center gap-2">
           <form
             onSubmit={(e) => {
               e.preventDefault();
@@ -91,7 +117,7 @@ const Navbar = ({ onToggleSidebar }: NavbarProps) => {
               if (input?.value.trim())
                 navigate(`/search?q=${encodeURIComponent(input.value.trim())}`);
             }}
-            className="flex"
+            className="flex flex-1"
           >
             <input
               type="text"
@@ -105,6 +131,15 @@ const Navbar = ({ onToggleSidebar }: NavbarProps) => {
               <Search className="w-5 h-5 text-muted-foreground" />
             </button>
           </form>
+          <button
+            type="button"
+            onClick={toggleCollapsed}
+            className="p-2 rounded-full hover:bg-muted transition-colors"
+            title="Üst menüyü gizle"
+            aria-label="Üst menüyü gizle"
+          >
+            <ChevronUp className="w-5 h-5 text-muted-foreground" />
+          </button>
         </div>
 
         {/* FoCAM screen recorder shortcut */}
@@ -220,6 +255,7 @@ const Navbar = ({ onToggleSidebar }: NavbarProps) => {
           )}
         </div>
       </div>
+      )}
       <ModerationDialog open={modOpen} onOpenChange={setModOpen} />
     </nav>
   );
