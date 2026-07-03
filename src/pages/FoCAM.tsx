@@ -20,45 +20,69 @@ const FoCAM = () => {
   const displayStreamRef = useRef<MediaStream | null>(null);
   const micStreamRef = useRef<MediaStream | null>(null);
   const combinedStreamRef = useRef<MediaStream | null>(null);
+  const audioCtxRef = useRef<AudioContext | null>(null);
 
   const cleanupStreams = () => {
     [displayStreamRef, micStreamRef, combinedStreamRef].forEach((r) => {
       r.current?.getTracks().forEach((t) => t.stop());
       r.current = null;
     });
+    if (audioCtxRef.current) {
+      audioCtxRef.current.close().catch(() => {});
+      audioCtxRef.current = null;
+    }
   };
 
   const startRecording = async () => {
     setFinalUrl(null);
     chunksRef.current = [];
     try {
-      const display = await navigator.mediaDevices.getDisplayMedia({
-        video: { frameRate: 30 } as any,
-        audio: systemAudio,
-      });
-      displayStreamRef.current = display;
-
+      // Request mic FIRST (while user gesture is fresh) so permission prompt works reliably
       let mic: MediaStream | null = null;
       if (micAudio) {
         try {
-          mic = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+          mic = await navigator.mediaDevices.getUserMedia({
+            audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
+            video: false,
+          });
           micStreamRef.current = mic;
-        } catch {
+        } catch (err) {
           toast({ title: "Mikrofon", description: "Mikrofon erişimi reddedildi, sessiz devam ediliyor." });
         }
+      }
+
+      const display = await navigator.mediaDevices.getDisplayMedia({
+        video: { frameRate: 30 } as any,
+        audio: systemAudio
+          ? ({ echoCancellation: false, noiseSuppression: false, autoGainControl: false } as any)
+          : false,
+      });
+      displayStreamRef.current = display;
+
+      if (systemAudio && display.getAudioTracks().length === 0) {
+        toast({
+          title: "Sistem sesi",
+          description: "Paylaşım penceresinde 'Sesi paylaş' kutusunu işaretlemeniz gerekir.",
+        });
       }
 
       // Mix audio tracks
       const audioTracks: MediaStreamTrack[] = [];
       const ctx = new AudioContext();
+      audioCtxRef.current = ctx;
+      if (ctx.state === "suspended") {
+        try { await ctx.resume(); } catch {}
+      }
       const dest = ctx.createMediaStreamDestination();
       let hasAudio = false;
-      if (systemAudio && display.getAudioTracks().length) {
-        ctx.createMediaStreamSource(new MediaStream(display.getAudioTracks())).connect(dest);
+      if (display.getAudioTracks().length) {
+        const sysSrc = ctx.createMediaStreamSource(new MediaStream([display.getAudioTracks()[0]]));
+        sysSrc.connect(dest);
         hasAudio = true;
       }
       if (mic && mic.getAudioTracks().length) {
-        ctx.createMediaStreamSource(mic).connect(dest);
+        const micSrc = ctx.createMediaStreamSource(new MediaStream([mic.getAudioTracks()[0]]));
+        micSrc.connect(dest);
         hasAudio = true;
       }
       if (hasAudio) audioTracks.push(...dest.stream.getAudioTracks());
