@@ -29,9 +29,9 @@ const Navbar = ({ onToggleSidebar }: NavbarProps) => {
   const [isDuoMod, setIsDuoMod] = useState(false);
   const [modOpen, setModOpen] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
-  const [collapsed, setCollapsed] = useState<boolean>(() => {
+  const [secondBarOpen, setSecondBarOpen] = useState<boolean>(() => {
     if (typeof window === "undefined") return false;
-    return localStorage.getItem("scatydeo_nav_collapsed") === "1";
+    return localStorage.getItem("scatydeo_nav_secondbar") !== "0";
   });
   const { user, signOut } = useAuth();
   const { t } = useLanguage();
@@ -68,30 +68,20 @@ const Navbar = ({ onToggleSidebar }: NavbarProps) => {
     navigate("/");
   };
 
-  const toggleCollapsed = () => {
-    const next = !collapsed;
-    setCollapsed(next);
-    localStorage.setItem("scatydeo_nav_collapsed", next ? "1" : "0");
+  const toggleSecondBar = () => {
+    const next = !secondBarOpen;
+    setSecondBarOpen(next);
+    localStorage.setItem("scatydeo_nav_secondbar", next ? "1" : "0");
   };
 
+  useEffect(() => {
+    const h = secondBarOpen ? "6.5rem" : "3.5rem";
+    document.documentElement.style.setProperty("--nav-h", h);
+  }, [secondBarOpen]);
+
   return (
-    <nav
-      className={cn(
-        "fixed top-0 left-0 right-0 z-50 bg-background border-b border-border transition-all duration-200",
-        collapsed ? "h-6" : "h-14"
-      )}
-    >
-      {collapsed ? (
-        <button
-          onClick={toggleCollapsed}
-          className="w-full h-full flex items-center justify-center hover:bg-muted transition-colors"
-          title="Menüyü göster"
-          aria-label="Menüyü göster"
-        >
-          <ChevronDown className="w-4 h-4 text-muted-foreground" />
-        </button>
-      ) : (
-      <div className="flex items-center justify-between h-full px-4">
+    <nav className="fixed top-0 left-0 right-0 z-50 bg-background border-b border-border">
+      <div className="flex items-center justify-between h-14 px-4">
         {/* Left: Menu + Logo */}
         <div className="flex items-center gap-2">
           <button
@@ -133,21 +123,18 @@ const Navbar = ({ onToggleSidebar }: NavbarProps) => {
           </form>
           <button
             type="button"
-            onClick={toggleCollapsed}
+            onClick={toggleSecondBar}
             className="p-2 rounded-full hover:bg-muted transition-colors"
-            title="Üst menüyü gizle"
-            aria-label="Üst menüyü gizle"
+            title={secondBarOpen ? "Alt menüyü gizle" : "Alt menüyü göster"}
+            aria-label="Alt menüyü aç/kapat"
           >
-            <ChevronUp className="w-5 h-5 text-muted-foreground" />
+            {secondBarOpen ? (
+              <ChevronUp className="w-5 h-5 text-muted-foreground" />
+            ) : (
+              <ChevronDown className="w-5 h-5 text-muted-foreground" />
+            )}
           </button>
         </div>
-
-        {/* FoCAM screen recorder shortcut */}
-        <Link to="/focam" title="Scatydeo FoCAM" className="hidden sm:flex">
-          <Button variant="ghost" size="icon" className="rounded-full">
-            <Video className="w-5 h-5" />
-          </Button>
-        </Link>
 
         {/* Right: Actions */}
         <div className="flex items-center gap-1">
@@ -169,17 +156,6 @@ const Navbar = ({ onToggleSidebar }: NavbarProps) => {
               MOD
             </button>
           )}
-
-          {/* Manage my videos */}
-          {user && (
-            <Link to="/manage/videos">
-              <Button variant="ghost" size="icon" className="rounded-full" title={t.nav.uploadVideo}>
-                <SlidersHorizontal className="w-5 h-5" />
-              </Button>
-            </Link>
-          )}
-
-          <LanguageSwitcher />
 
           {/* Switch shortcut (always visible) */}
           <Link to="/switch">
@@ -255,6 +231,40 @@ const Navbar = ({ onToggleSidebar }: NavbarProps) => {
           )}
         </div>
       </div>
+      {/* Second taskbar */}
+      {secondBarOpen && (
+        <div className="relative h-12 overflow-hidden border-t border-primary/30">
+          {/* Animated purple background */}
+          <div
+            className="absolute inset-0 -z-0"
+            style={{
+              background:
+                "linear-gradient(120deg, hsl(270 80% 25%), hsl(280 90% 40%), hsl(260 85% 30%), hsl(290 90% 45%))",
+              backgroundSize: "300% 300%",
+              animation: "scatydeoNavGradient 12s ease infinite",
+            }}
+          />
+          <div className="relative z-10 h-full flex items-center gap-1 px-4">
+            {user && (
+              <Link to="/manage/videos">
+                <Button variant="ghost" size="sm" className="rounded-full text-white hover:bg-white/15 gap-2">
+                  <SlidersHorizontal className="w-4 h-4" />
+                  <span className="hidden sm:inline">{t.nav.uploadVideo}</span>
+                </Button>
+              </Link>
+            )}
+            <Link to="/focam">
+              <Button variant="ghost" size="sm" className="rounded-full text-white hover:bg-white/15 gap-2" title="Scatydeo FoCAM">
+                <Video className="w-4 h-4" />
+                <span className="hidden sm:inline">FoCAM</span>
+              </Button>
+            </Link>
+            <div className="text-white [&_button]:text-white [&_button:hover]:bg-white/15">
+              <LanguageSwitcher />
+            </div>
+          </div>
+          <style>{`@keyframes scatydeoNavGradient {0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}`}</style>
+        </div>
       )}
       <ModerationDialog open={modOpen} onOpenChange={setModOpen} />
     </nav>
