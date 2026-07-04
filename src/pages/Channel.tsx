@@ -166,7 +166,7 @@ const Channel = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="md3-scope min-h-screen bg-background">
         <Navbar />
         <div className="flex items-center justify-center min-h-[60vh]">
           <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
@@ -178,7 +178,7 @@ const Channel = () => {
 
   if (!profile) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="md3-scope min-h-screen bg-background">
         <Navbar />
         <div className="container mx-auto px-4 py-20 text-center">
           <AlertTriangle className="w-16 h-16 text-primary mx-auto mb-4" />
@@ -193,7 +193,7 @@ const Channel = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="md3-scope min-h-screen bg-background">
       <Navbar />
 
       {/* Banner */}

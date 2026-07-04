@@ -394,7 +394,7 @@ const LiveStream = () => {
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="md3-scope min-h-screen bg-background">
         <Navbar />
         <div className="container mx-auto px-4 py-20 text-center">
           <AlertTriangle className="w-16 h-16 text-primary mx-auto mb-4" />
@@ -409,7 +409,7 @@ const LiveStream = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="md3-scope min-h-screen bg-background">
       <Navbar />
 
       <main className="container mx-auto px-4 py-20">

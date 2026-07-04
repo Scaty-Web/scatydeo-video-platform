@@ -182,7 +182,7 @@ const LiveWatch = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="md3-scope min-h-screen bg-background">
         <Navbar />
         <div className="flex items-center justify-center pt-32">
           <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
@@ -193,7 +193,7 @@ const LiveWatch = () => {
 
   if (!stream) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="md3-scope min-h-screen bg-background">
         <Navbar />
         <div className="container mx-auto px-4 py-20 text-center">
           <AlertTriangle className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
@@ -210,7 +210,7 @@ const LiveWatch = () => {
 
   if (!stream.is_live) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="md3-scope min-h-screen bg-background">
         <Navbar />
         <div className="container mx-auto px-4 py-20 text-center">
           <Radio className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
@@ -226,7 +226,7 @@ const LiveWatch = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="md3-scope min-h-screen bg-background">
       <Navbar />
       <main className="container mx-auto px-4 pt-20 pb-8">
         <div className="flex flex-col lg:flex-row gap-4 max-w-7xl mx-auto">

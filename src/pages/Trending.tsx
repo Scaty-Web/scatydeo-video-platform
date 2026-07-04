@@ -31,7 +31,7 @@ const Trending = () => {
   });
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="md3-scope min-h-screen bg-background">
       <Navbar onToggleSidebar={() => setSidebarCollapsed(!sidebarCollapsed)} />
       {!isMobile && <Sidebar collapsed={sidebarCollapsed} />}
       <main

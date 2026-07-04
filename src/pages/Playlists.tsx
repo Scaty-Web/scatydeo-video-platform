@@ -100,7 +100,7 @@ const Playlists = () => {
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="md2-scope min-h-screen bg-background">
         <Navbar />
         <div className="container mx-auto px-4 py-20 text-center">
           <h1 className="text-2xl font-bold mb-4">{t.playlist.myPlaylists}</h1>
@@ -115,7 +115,7 @@ const Playlists = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="md2-scope min-h-screen bg-background">
       <Navbar />
 
       <main className="container mx-auto px-4 py-8 pt-20">
