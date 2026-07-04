@@ -62,7 +62,7 @@ const LiveStreams = () => {
     <div className="min-h-screen bg-background">
       <Navbar />
       <Sidebar />
-      <main className="ml-0 md:ml-56 pt-14 p-6">
+      <main className="ml-0 md:ml-56 pt-[var(--nav-h,3.5rem)] p-6">
         <div className="max-w-6xl mx-auto">
           <div className="flex items-center gap-3 mb-8">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-destructive to-primary flex items-center justify-center">

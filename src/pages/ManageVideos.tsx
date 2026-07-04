@@ -80,7 +80,7 @@ const ManageVideos = () => {
       <Navbar onToggleSidebar={() => setSidebarCollapsed(!sidebarCollapsed)} />
       {!isMobile && <Sidebar collapsed={sidebarCollapsed} />}
       <main className={cn(
-        "pt-14 transition-all duration-200 min-h-screen",
+        "pt-[var(--nav-h,3.5rem)] transition-all duration-200 min-h-screen",
         isMobile ? "ml-0 pb-16" : sidebarCollapsed ? "ml-[72px]" : "ml-56"
       )}>
         <div className="p-4 md:p-8 max-w-5xl mx-auto">
