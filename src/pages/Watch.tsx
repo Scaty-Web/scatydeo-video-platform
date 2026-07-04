@@ -274,11 +274,18 @@ const Watch = () => {
           description: video.description,
           comments: comments.slice(0, 5).map(c => c.content),
           video_url: video.video_url,
+          language,
         },
       });
 
       if (error) throw error;
-      setAiSummary(data.summary);
+      setAiSummary(data.summary || (language === "tr" ? "Özet oluşturulamadı." : "Could not generate summary."));
+      if (data.fallback || data.error) {
+        toast({
+          title: language === "tr" ? "AI özeti yedek modda" : "AI summary in fallback mode",
+          description: data.error || (language === "tr" ? "Video analizi yerine metin bilgileri kullanıldı." : "Text details were used instead of video analysis."),
+        });
+      }
     } catch (err: any) {
       toast({
         title: language === "tr" ? "Özet oluşturulamadı" : "Could not generate summary",
