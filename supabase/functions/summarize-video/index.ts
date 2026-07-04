@@ -46,7 +46,20 @@ serve(async (req) => {
     const safeTitle = String(title).slice(0, 500);
     const safeDescription = description ? String(description).slice(0, 1000) : "";
     const safeComments = Array.isArray(comments) ? comments.slice(0, 5).map((c: any) => String(c).slice(0, 200)) : [];
-    const safeVideoUrl = typeof video_url === "string" && /^https?:\/\//i.test(video_url) ? video_url.slice(0, 1000) : "";
+    let safeVideoUrl = typeof video_url === "string" && /^https?:\/\//i.test(video_url) ? video_url.slice(0, 1000) : "";
+
+    // Gemini rejects downloaded media > 30MB. Skip attaching the video if too large or unknown.
+    if (safeVideoUrl) {
+      try {
+        const head = await fetch(safeVideoUrl, { method: "HEAD" });
+        const len = Number(head.headers.get("content-length") || "0");
+        if (!head.ok || !len || len > 28 * 1024 * 1024) {
+          safeVideoUrl = "";
+        }
+      } catch {
+        safeVideoUrl = "";
+      }
+    }
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
@@ -84,6 +97,30 @@ Provide a helpful summary that tells viewers what this video is about.`;
     });
 
     if (!response.ok) {
+      // Video too large / provider rejected the attachment → retry text-only
+      if ((response.status === 413 || response.status === 400) && safeVideoUrl) {
+        const retry = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${LOVABLE_API_KEY}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            model: "google/gemini-2.5-flash",
+            messages: [
+              { role: "system", content: "You are a helpful video content summarizer. Keep summaries concise and informative." },
+              { role: "user", content: prompt },
+            ],
+          }),
+        });
+        if (retry.ok) {
+          const data = await retry.json();
+          const summary = data.choices?.[0]?.message?.content || "Could not generate summary.";
+          return new Response(JSON.stringify({ summary }), {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+      }
       if (response.status === 429) {
         return new Response(JSON.stringify({ error: "Rate limit exceeded, please try again later." }), {
           status: 429,
