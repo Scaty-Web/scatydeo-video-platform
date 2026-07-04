@@ -168,14 +168,18 @@ serve(async (req) => {
       return jsonResponse({ summary: fallbackSummary, fallback: true, error: "AI is not configured." });
     }
 
-    const prompt = `Summarize the following video content in a concise paragraph (3-5 sentences). Write the summary in the same language as the title. ${safeVideoUrl ? "If you can access the video URL, analyze the actual video content (visuals + audio) in addition to the metadata." : ""}
+    const languageInstruction = safeLanguage === "en"
+      ? "Write the summary in English."
+      : "Özeti mutlaka Türkçe yaz. Başka bir dil kullanma.";
 
-Video Title: ${safeTitle}
-${safeDescription ? `Description: ${safeDescription}` : ""}
-${safeComments.length > 0 ? `Top Comments: ${safeComments.join(", ")}` : ""}
+    const prompt = `${languageInstruction} Aşağıdaki video içeriğini 3-5 cümlelik kısa bir paragrafla özetle. ${safeVideoUrl ? "Video URL'sine erişebiliyorsan, metadata'ya ek olarak videonun görsel ve ses içeriğini de analiz et." : ""}
+
+Video Başlığı: ${safeTitle}
+${safeDescription ? `Açıklama: ${safeDescription}` : ""}
+${safeComments.length > 0 ? `Öne Çıkan Yorumlar: ${safeComments.join(", ")}` : ""}
 ${safeVideoUrl ? `Video URL: ${safeVideoUrl}` : ""}
 
-Provide a helpful summary that tells viewers what this video is about.`;
+İzleyicilere bu videonun ne hakkında olduğunu anlatan faydalı bir özet ver. ${languageInstruction}`;
 
     const mediaBlock = await createMediaBlock(safeVideoUrl);
     const firstAttempt = await callAiGateway(LOVABLE_API_KEY, prompt, mediaBlock);
