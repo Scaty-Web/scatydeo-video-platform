@@ -215,7 +215,7 @@ const FoCAM = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="md3-scope min-h-screen bg-background">
       <Navbar />
       <main className="pt-20 pb-16 px-4 max-w-3xl mx-auto">
         <div className="text-center mb-8">

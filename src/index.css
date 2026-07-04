@@ -190,3 +190,69 @@
     color: hsl(var(--m3-on-surface));
   }
 }
+
+/* =====================================================================
+   Material Design scopes: apply to a page's outermost wrapper.
+   - .md2-scope → Material 2 look (sharp corners, prominent shadows,
+     bold colored top accent, denser filled buttons).
+   - .md3-scope → Material 3 look (soft rounded corners, tonal
+     surfaces, gentle elevation, expressive pill controls).
+   These re-map the shared design tokens so shadcn components and
+   existing utilities inherit the new look automatically.
+   ===================================================================== */
+@layer components {
+  .md2-scope {
+    --radius: 0.25rem;
+    --card: 0 0% 9%;
+    --border: 270 30% 22%;
+    --input: 270 30% 14%;
+    background-color: hsl(var(--background));
+    position: relative;
+  }
+  .md2-scope::before {
+    content: '';
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 4px;
+    background: var(--gradient-primary);
+    z-index: 1;
+    pointer-events: none;
+  }
+  .md2-scope .glass-card,
+  .md2-scope [class*="rounded-xl"],
+  .md2-scope [class*="rounded-2xl"],
+  .md2-scope [class*="rounded-3xl"] {
+    border-radius: 4px !important;
+  }
+  .md2-scope .rounded-full { border-radius: 9999px !important; }
+  .md2-scope button:not(.rounded-full):not([role="menuitem"]):not([role="tab"]) {
+    border-radius: 2px;
+    box-shadow: 0 2px 4px hsl(0 0% 0% / 0.5), 0 1px 2px hsl(0 0% 0% / 0.4);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    font-weight: 600;
+  }
+  .md2-scope .glass-card,
+  .md2-scope .m3-surface,
+  .md2-scope .m3-surface-high {
+    background: hsl(var(--card));
+    border: 1px solid hsl(var(--border));
+    box-shadow: 0 2px 4px hsl(0 0% 0% / 0.4), 0 4px 12px hsl(0 0% 0% / 0.35);
+  }
+
+  .md3-scope {
+    --radius: 1.25rem;
+    --card: 0 0% 10%;
+    --border: 270 30% 22%;
+  }
+  .md3-scope .glass-card,
+  .md3-scope .m3-surface {
+    background: hsl(var(--m3-surface-container));
+    border: 1px solid hsl(var(--m3-outline-variant));
+    border-radius: var(--m3-shape-xl);
+    box-shadow: var(--m3-elev-1);
+  }
+  .md3-scope button:not(.rounded-full):not([role="menuitem"]):not([role="tab"]) {
+    border-radius: 9999px;
+  }
+}

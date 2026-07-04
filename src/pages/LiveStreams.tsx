@@ -59,7 +59,7 @@ const LiveStreams = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="md3-scope min-h-screen bg-background">
       <Navbar />
       <Sidebar />
       <main className="ml-0 md:ml-56 pt-[var(--nav-h,3.5rem)] p-6">

@@ -168,18 +168,29 @@ serve(async (req) => {
       return jsonResponse({ summary: fallbackSummary, fallback: true, error: "AI is not configured." });
     }
 
-    const languageInstruction = safeLanguage === "en"
+    const isEn = safeLanguage === "en";
+    const languageInstruction = isEn
       ? "Write the summary in English."
-      : "Özeti mutlaka Türkçe yaz. Başka bir dil kullanma.";
+      : "Özeti KESİNLİKLE Türkçe yaz. Başka bir dil kullanma.";
 
-    const prompt = `${languageInstruction} Aşağıdaki video içeriğini 3-5 cümlelik kısa bir paragrafla özetle. ${safeVideoUrl ? "Video URL'sine erişebiliyorsan, metadata'ya ek olarak videonun görsel ve ses içeriğini de analiz et." : ""}
+    const prompt = `${languageInstruction}
 
-Video Başlığı: ${safeTitle}
-${safeDescription ? `Açıklama: ${safeDescription}` : ""}
-${safeComments.length > 0 ? `Öne Çıkan Yorumlar: ${safeComments.join(", ")}` : ""}
-${safeVideoUrl ? `Video URL: ${safeVideoUrl}` : ""}
+GÖREVİN: Aşağıdaki video hakkında 3-5 cümlelik NET, SOMUT bir özet yaz.
 
-İzleyicilere bu videonun ne hakkında olduğunu anlatan faydalı bir özet ver. ${languageInstruction}`;
+KURALLAR:
+1. Sadece GERÇEKTEN gördüğün/okuduğun şeylerden bahset. Tahmin yürütme, uydurma.
+2. Videoyu analiz edebiliyorsan görsel + ses içeriğini kullan; edemiyorsan sadece başlık/açıklama/yorumlardan yararlan.
+3. Emin olmadığın konularda "muhtemelen", "görünüşe göre" gibi ifadeler kullan; asla yanlış bilgi verme.
+4. Video anlamsız/anlaşılmaz görünüyorsa bile, gördüğün somut şeyleri (renkler, sahneler, kişiler, sesler, konu başlığı) tarif et.
+5. "Bu videoyu anlayamadım" veya "yorum yapamam" gibi cümleler YAZMA. Her zaman elindeki verilerle en iyi özeti üret.
+6. Reklam, spam veya kişisel yorum ekleme.
+
+VIDEO BİLGİLERİ:
+Başlık: ${safeTitle}
+${safeDescription ? `Açıklama: ${safeDescription}` : "Açıklama: (yok)"}
+${safeComments.length > 0 ? `Yorumlar: ${safeComments.join(" | ")}` : ""}
+
+Şimdi ${isEn ? "in English" : "Türkçe olarak"} 3-5 cümlelik özeti yaz:`;
 
     const mediaBlock = await createMediaBlock(safeVideoUrl);
     const firstAttempt = await callAiGateway(LOVABLE_API_KEY, prompt, mediaBlock);
