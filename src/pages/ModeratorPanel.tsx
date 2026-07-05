@@ -75,7 +75,7 @@ const ModeratorPanel = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   
-  const [isModerator, setIsModerator] = useState(false);
+  const [isDefaultMod, setIsDefaultMod] = useState(false);
   const [loading, setLoading] = useState(true);
   const [reports, setReports] = useState<Report[]>([]);
   const [bannedUsers, setBannedUsers] = useState<BannedUser[]>([]);
@@ -95,12 +95,12 @@ const ModeratorPanel = () => {
   const checkModeratorStatus = async () => {
     if (!user) return;
     
-    // Check moderator status via server-side has_role function only
+    // Default Mod only: this panel is not available to admin, duo_mod, or legacy moderator.
     const { data: roleData } = await supabase
-      .rpc('has_role', { _user_id: user.id, _role: 'moderator' });
+      .rpc('has_role', { _user_id: user.id, _role: 'default_mod' as any });
     
     if (roleData) {
-      setIsModerator(true);
+      setIsDefaultMod(true);
       fetchReports();
       fetchBannedUsers();
     }
@@ -274,7 +274,7 @@ const ModeratorPanel = () => {
     );
   }
 
-  if (!user || !isModerator) {
+  if (!user || !isDefaultMod) {
     return (
       <div className="md3-scope min-h-screen bg-background">
         <Navbar />

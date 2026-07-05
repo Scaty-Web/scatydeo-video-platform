@@ -48,11 +48,12 @@ const Navbar = ({ onToggleSidebar }: NavbarProps) => {
 
   const checkModeratorStatus = async () => {
     if (!user) return;
-    const [{ data: adm }, { data: duo }] = await Promise.all([
+    const [{ data: adm }, { data: duo }, { data: defaultMod }] = await Promise.all([
       supabase.rpc('has_role', { _user_id: user.id, _role: 'admin' }),
       supabase.rpc('has_role', { _user_id: user.id, _role: 'duo_mod' as any }),
+      supabase.rpc('has_role', { _user_id: user.id, _role: 'default_mod' as any }),
     ]);
-    setIsModerator(!!adm);
+    setIsModerator(!!defaultMod);
     setIsAdmin(!!adm);
     setIsDuoMod(!!duo);
   };
