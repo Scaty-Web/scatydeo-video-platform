@@ -98,22 +98,20 @@ const ReportVideoDialog = ({ videoId, videoTitle }: ReportVideoDialogProps) => {
         });
       }
     } else {
-      // Route report to Duo Mod first, fallback to Default Mod / Admin
+      // Broadcast report to ALL moderators/admins
       try {
-        const { data: duoId } = await supabase.rpc("get_report_recipient" as any);
-        let recipientId: string | null = (duoId as any) || null;
-        if (!recipientId) {
-          const { data: defId } = await supabase.rpc("get_default_mod_recipient" as any);
-          recipientId = (defId as any) || null;
-        }
-        if (recipientId) {
-          await supabase.from("notifications").insert({
-            user_id: recipientId,
-            type: "moderation",
-            title: "Yeni Rapor",
-            message: `"${videoTitle}" videosu raporlandı. Sebep: ${fullReason}`,
-            link: `/watch/${videoId}`,
-          });
+        const { data: mods } = await supabase.rpc("get_all_mod_recipients" as any);
+        const recipients = Array.isArray(mods) ? (mods as any[]).map((r) => r.user_id).filter(Boolean) : [];
+        if (recipients.length > 0) {
+          await supabase.from("notifications").insert(
+            recipients.map((uid: string) => ({
+              user_id: uid,
+              type: "moderation",
+              title: "Yeni Rapor",
+              message: `"${videoTitle}" videosu raporlandı. Sebep: ${fullReason}`,
+              link: `/watch/${videoId}`,
+            }))
+          );
         }
       } catch (e) {
         console.error("report routing failed", e);

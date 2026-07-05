@@ -845,6 +845,12 @@ export type Database = {
         Args: { target_video_id: string }
         Returns: boolean
       }
+      get_all_mod_recipients: {
+        Args: never
+        Returns: {
+          user_id: string
+        }[]
+      }
       get_ban_banner: { Args: { _user_id: string }; Returns: string }
       get_ban_info: {
         Args: { _user_id: string }

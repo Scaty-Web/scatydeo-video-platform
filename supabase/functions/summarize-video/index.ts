@@ -7,8 +7,9 @@ const corsHeaders = {
 };
 
 const AI_GATEWAY_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
-const MODEL = "google/gemini-2.5-flash";
-const MAX_INLINE_VIDEO_BYTES = 6 * 1024 * 1024;
+const MODEL = "google/gemini-2.5-pro";
+const FALLBACK_MODEL = "google/gemini-2.5-flash";
+const MAX_INLINE_VIDEO_BYTES = 15 * 1024 * 1024;
 
 const jsonResponse = (body: Record<string, unknown>, status = 200) =>
   new Response(JSON.stringify(body), {
@@ -85,7 +86,7 @@ const buildFallbackSummary = (title: string, description: string, comments: stri
   return `“${title}” başlıklı video, video analizi geçici olarak kullanılamadığı için başlık, açıklama ve yorumlardan özetlendi.${shortDescription ? ` Açıklamada öne çıkanlar: ${shortDescription}` : ""}${commentHint ? ` Yorumlarda bahsedilenler: ${commentHint}` : ""}`;
 };
 
-const callAiGateway = async (apiKey: string, prompt: string, mediaBlock: Record<string, unknown> | null) => {
+const callAiGateway = async (apiKey: string, prompt: string, mediaBlock: Record<string, unknown> | null, model: string = MODEL) => {
   const response = await fetch(AI_GATEWAY_URL, {
     method: "POST",
     headers: {
@@ -93,9 +94,9 @@ const callAiGateway = async (apiKey: string, prompt: string, mediaBlock: Record<
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      model: MODEL,
+      model,
       messages: [
-        { role: "system", content: "You are a helpful video content summarizer. Keep summaries concise and informative." },
+        { role: "system", content: "Sen dikkatli bir video analistisin. Videoyu izler, sesi dinler ve NET, DOĞRU, TÜRKÇE özet üretirsin. Asla uydurma yapmazsın, gördüğünü net anlatırsın." },
         {
           role: "user",
           content: mediaBlock
@@ -175,34 +176,46 @@ serve(async (req) => {
 
     const prompt = `${languageInstruction}
 
-GÖREVİN: Aşağıdaki video hakkında 3-5 cümlelik NET, SOMUT bir özet yaz.
+GÖREV: Videoyu dikkatlice izle/analiz et ve 4-6 cümlelik NET bir özet yaz.
 
-KURALLAR:
-1. Sadece GERÇEKTEN gördüğün/okuduğun şeylerden bahset. Tahmin yürütme, uydurma.
-2. Videoyu analiz edebiliyorsan görsel + ses içeriğini kullan; edemiyorsan sadece başlık/açıklama/yorumlardan yararlan.
-3. Emin olmadığın konularda "muhtemelen", "görünüşe göre" gibi ifadeler kullan; asla yanlış bilgi verme.
-4. Video anlamsız/anlaşılmaz görünüyorsa bile, gördüğün somut şeyleri (renkler, sahneler, kişiler, sesler, konu başlığı) tarif et.
-5. "Bu videoyu anlayamadım" veya "yorum yapamam" gibi cümleler YAZMA. Her zaman elindeki verilerle en iyi özeti üret.
-6. Reklam, spam veya kişisel yorum ekleme.
+ADIMLAR (sırayla uygula):
+1. Videonun görsel içeriğine bak: kim/ne var, ne yapıyorlar, hangi ortam, hangi nesneler/sahneler.
+2. Ses/konuşma varsa dinle: konuşulan ana konu, önemli ifadeler.
+3. Başlık ve açıklamayı bağlam olarak kullan ama sadece onlara güvenme — GÖRDÜĞÜNÜ önceliklendir.
+4. Videonun ANA KONUSUNU net bir cümleyle söyle. Sonra 2-4 cümle detay ver (ne oluyor, nasıl gelişiyor, sonuç ne).
 
-VIDEO BİLGİLERİ:
+KATI KURALLAR:
+- Uydurma. Görmediğin şeyi yazma.
+- "Anlayamadım", "yorum yapamam", "belirsiz" gibi kaçamak cümleler YASAK. Ne gördüysen onu yaz.
+- Emin olmadığın detayda "muhtemelen" kullan, ama ana konuyu NET söyle.
+- Reklam, kişisel görüş, tekrarlayan giriş cümlesi ("Bu video…") yok. Direkt konuya gir.
+- ${isEn ? "Write in English." : "SADECE Türkçe yaz."}
+
+VİDEO META:
 Başlık: ${safeTitle}
-${safeDescription ? `Açıklama: ${safeDescription}` : "Açıklama: (yok)"}
-${safeComments.length > 0 ? `Yorumlar: ${safeComments.join(" | ")}` : ""}
+Açıklama: ${safeDescription || "(yok)"}
+${safeComments.length > 0 ? `İzleyici yorumları: ${safeComments.join(" | ")}` : ""}
 
-Şimdi ${isEn ? "in English" : "Türkçe olarak"} 3-5 cümlelik özeti yaz:`;
+Şimdi özeti yaz:`;
 
     const mediaBlock = await createMediaBlock(safeVideoUrl);
-    const firstAttempt = await callAiGateway(LOVABLE_API_KEY, prompt, mediaBlock);
+    const firstAttempt = await callAiGateway(LOVABLE_API_KEY, prompt, mediaBlock, MODEL);
 
     if (firstAttempt.ok && firstAttempt.summary) {
       return jsonResponse({ summary: firstAttempt.summary, analyzedVideo: !!mediaBlock });
     }
 
-    console.error("AI gateway error:", firstAttempt.status, firstAttempt.errorText);
+    console.error("AI gateway error (pro):", firstAttempt.status, firstAttempt.errorText);
+
+    // Retry with faster model, same media
+    const flashAttempt = await callAiGateway(LOVABLE_API_KEY, prompt, mediaBlock, FALLBACK_MODEL);
+    if (flashAttempt.ok && flashAttempt.summary) {
+      return jsonResponse({ summary: flashAttempt.summary, analyzedVideo: !!mediaBlock });
+    }
+    console.error("AI gateway error (flash):", flashAttempt.status, flashAttempt.errorText);
 
     if (mediaBlock) {
-      const retry = await callAiGateway(LOVABLE_API_KEY, prompt, null);
+      const retry = await callAiGateway(LOVABLE_API_KEY, prompt, null, FALLBACK_MODEL);
       if (retry.ok && retry.summary) {
         return jsonResponse({ summary: retry.summary, analyzedVideo: false, fallback: true });
       }
