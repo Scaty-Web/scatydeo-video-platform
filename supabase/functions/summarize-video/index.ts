@@ -7,9 +7,10 @@ const corsHeaders = {
 };
 
 const AI_GATEWAY_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
-const MODEL = "google/gemini-2.5-pro";
-const FALLBACK_MODEL = "google/gemini-2.5-flash";
-const MAX_INLINE_VIDEO_BYTES = 15 * 1024 * 1024;
+const MODEL = "google/gemini-3.1-pro-preview";
+const FALLBACK_MODEL = "google/gemini-2.5-pro";
+const FINAL_FALLBACK_MODEL = "google/gemini-2.5-flash";
+const MAX_REMOTE_VIDEO_BYTES = 50 * 1024 * 1024;
 
 const jsonResponse = (body: Record<string, unknown>, status = 200) =>
   new Response(JSON.stringify(body), {
@@ -29,49 +30,41 @@ const inferMimeType = (url: string, fallback = "application/octet-stream") => {
   return fallback;
 };
 
-const arrayBufferToBase64 = (buffer: ArrayBuffer) => {
-  const bytes = new Uint8Array(buffer);
-  let binary = "";
-  const chunkSize = 0x8000;
-  for (let i = 0; i < bytes.length; i += chunkSize) {
-    binary += String.fromCharCode(...bytes.subarray(i, i + chunkSize));
-  }
-  return btoa(binary);
-};
-
-const createMediaBlock = async (url: string) => {
-  if (!url) return null;
+const createMediaBlock = async (url: string): Promise<{ block: Record<string, unknown> | null; skippedReason?: string }> => {
+  if (!url) return { block: null, skippedReason: "missing_url" };
 
   try {
     const head = await fetch(url, { method: "HEAD" });
-    if (!head.ok) return null;
+    if (!head.ok) return { block: null, skippedReason: "head_failed" };
 
     const contentLength = Number(head.headers.get("content-length") || "0");
     const contentType = (head.headers.get("content-type") || "").split(";")[0].toLowerCase();
     const mimeType = inferMimeType(url, contentType || undefined);
 
     if (["image/png", "image/jpeg", "image/webp", "image/gif"].includes(mimeType)) {
-      return { type: "image_url", image_url: { url } };
+      return { block: { type: "image_url", image_url: { url } } };
     }
 
-    if (!mimeType.startsWith("video/") || !contentLength || contentLength > MAX_INLINE_VIDEO_BYTES) {
-      return null;
+    if (!mimeType.startsWith("video/")) {
+      return { block: null, skippedReason: "unsupported_mime" };
     }
 
-    const mediaResponse = await fetch(url);
-    if (!mediaResponse.ok) return null;
+    if (contentLength && contentLength > MAX_REMOTE_VIDEO_BYTES) {
+      return { block: null, skippedReason: "video_too_large" };
+    }
 
-    const buffer = await mediaResponse.arrayBuffer();
-    if (buffer.byteLength > MAX_INLINE_VIDEO_BYTES) return null;
-
-    const responseMimeType = inferMimeType(url, (mediaResponse.headers.get("content-type") || mimeType).split(";")[0].toLowerCase());
+    // OpenRouter/Gemini expects actual videos as `video_url`, not `image_url`.
+    // Passing the public storage URL directly lets the model inspect frames/audio
+    // instead of forcing fragile base64 downloads inside the edge function.
     return {
-      type: "image_url",
-      image_url: { url: `data:${responseMimeType};base64,${arrayBufferToBase64(buffer)}` },
+      block: {
+        type: "video_url",
+        video_url: { url },
+      },
     };
   } catch (error) {
     console.warn("Skipping media attachment:", error);
-    return null;
+    return { block: null, skippedReason: "fetch_failed" };
   }
 };
 
@@ -95,8 +88,9 @@ const callAiGateway = async (apiKey: string, prompt: string, mediaBlock: Record<
     },
     body: JSON.stringify({
       model,
+      temperature: 0.2,
       messages: [
-        { role: "system", content: "Sen dikkatli bir video analistisin. Videoyu izler, sesi dinler ve NET, DOĞRU, TÜRKÇE özet üretirsin. Asla uydurma yapmazsın, gördüğünü net anlatırsın." },
+        { role: "system", content: "Sen Scatydeo için çalışan dikkatli bir video analistisin. Video dosyası geldiyse kareleri ve sesi önceliklendirirsin; başlık, açıklama ve yorumları yalnızca bağlam olarak kullanırsın. Kısa, doğru, somut ve Türkçe cevap verirsin. Uydurma yapmazsın." },
         {
           role: "user",
           content: mediaBlock
@@ -176,19 +170,21 @@ serve(async (req) => {
 
     const prompt = `${languageInstruction}
 
-GÖREV: Videoyu dikkatlice izle/analiz et ve 4-6 cümlelik NET bir özet yaz.
+GÖREV: Eklenen video dosyasını gerçekten izle/analiz et ve 5-7 cümlelik NET bir özet yaz.
 
 ADIMLAR (sırayla uygula):
-1. Videonun görsel içeriğine bak: kim/ne var, ne yapıyorlar, hangi ortam, hangi nesneler/sahneler.
-2. Ses/konuşma varsa dinle: konuşulan ana konu, önemli ifadeler.
-3. Başlık ve açıklamayı bağlam olarak kullan ama sadece onlara güvenme — GÖRDÜĞÜNÜ önceliklendir.
-4. Videonun ANA KONUSUNU net bir cümleyle söyle. Sonra 2-4 cümle detay ver (ne oluyor, nasıl gelişiyor, sonuç ne).
+1. Önce video karelerini tara: sahne değişimleri, ekrandaki yazılar, karakterler/nesneler, hareketler, renkler ve ortam.
+2. Sonra ses varsa dinle: konuşma, müzik, efekt, ton ve önemli kelimeler.
+3. Başlık/açıklama/yorumları sadece bağlam olarak kullan; video kanıtıyla çelişirse videoya güven.
+4. Ana konuyu ilk cümlede söyle. Devamında somut sahne/ses kanıtlarıyla ne olduğunu açıkla.
+5. En sonda videonun sonucu/amacı/izleyicide bıraktığı ana fikri belirt.
 
 KATI KURALLAR:
 - Uydurma. Görmediğin şeyi yazma.
-- "Anlayamadım", "yorum yapamam", "belirsiz" gibi kaçamak cümleler YASAK. Ne gördüysen onu yaz.
-- Emin olmadığın detayda "muhtemelen" kullan, ama ana konuyu NET söyle.
-- Reklam, kişisel görüş, tekrarlayan giriş cümlesi ("Bu video…") yok. Direkt konuya gir.
+- Başlığa bakıp tahmin yürütme; görsel/ses kanıtı yoksa bunu kısa ve dürüstçe "video kanıtı sınırlı" diye belirt.
+- "Anlayamadım", "yorum yapamam" gibi kaçamak cümleler yazma; gördüğün ve duyduğun somut şeyleri anlat.
+- Aynı kalıp girişleri kullanma. Direkt konuya gir.
+- Çıktı tek paragraf olsun; liste, madde, emoji ve reklam dili kullanma.
 - ${isEn ? "Write in English." : "SADECE Türkçe yaz."}
 
 VİDEO META:
@@ -198,11 +194,12 @@ ${safeComments.length > 0 ? `İzleyici yorumları: ${safeComments.join(" | ")}` 
 
 Şimdi özeti yaz:`;
 
-    const mediaBlock = await createMediaBlock(safeVideoUrl);
+    const media = await createMediaBlock(safeVideoUrl);
+    const mediaBlock = media.block;
     const firstAttempt = await callAiGateway(LOVABLE_API_KEY, prompt, mediaBlock, MODEL);
 
     if (firstAttempt.ok && firstAttempt.summary) {
-      return jsonResponse({ summary: firstAttempt.summary, analyzedVideo: !!mediaBlock });
+      return jsonResponse({ summary: firstAttempt.summary, analyzedVideo: !!mediaBlock, mediaStatus: mediaBlock ? "video_attached" : media.skippedReason });
     }
 
     console.error("AI gateway error (pro):", firstAttempt.status, firstAttempt.errorText);
@@ -210,14 +207,20 @@ ${safeComments.length > 0 ? `İzleyici yorumları: ${safeComments.join(" | ")}` 
     // Retry with faster model, same media
     const flashAttempt = await callAiGateway(LOVABLE_API_KEY, prompt, mediaBlock, FALLBACK_MODEL);
     if (flashAttempt.ok && flashAttempt.summary) {
-      return jsonResponse({ summary: flashAttempt.summary, analyzedVideo: !!mediaBlock });
+      return jsonResponse({ summary: flashAttempt.summary, analyzedVideo: !!mediaBlock, mediaStatus: mediaBlock ? "video_attached" : media.skippedReason });
     }
     console.error("AI gateway error (flash):", flashAttempt.status, flashAttempt.errorText);
 
+    const finalAttempt = await callAiGateway(LOVABLE_API_KEY, prompt, mediaBlock, FINAL_FALLBACK_MODEL);
+    if (finalAttempt.ok && finalAttempt.summary) {
+      return jsonResponse({ summary: finalAttempt.summary, analyzedVideo: !!mediaBlock, mediaStatus: mediaBlock ? "video_attached" : media.skippedReason });
+    }
+    console.error("AI gateway error (final):", finalAttempt.status, finalAttempt.errorText);
+
     if (mediaBlock) {
-      const retry = await callAiGateway(LOVABLE_API_KEY, prompt, null, FALLBACK_MODEL);
+      const retry = await callAiGateway(LOVABLE_API_KEY, prompt, null, FINAL_FALLBACK_MODEL);
       if (retry.ok && retry.summary) {
-        return jsonResponse({ summary: retry.summary, analyzedVideo: false, fallback: true });
+        return jsonResponse({ summary: retry.summary, analyzedVideo: false, fallback: true, mediaStatus: "text_retry" });
       }
       console.error("AI gateway text-only retry error:", retry.status, retry.errorText);
     }
@@ -228,7 +231,7 @@ ${safeComments.length > 0 ? `İzleyici yorumları: ${safeComments.join(" | ")}` 
         ? "AI credits exhausted. Showing fallback summary."
         : "AI gateway unavailable. Showing fallback summary.";
 
-    return jsonResponse({ summary: fallbackSummary, fallback: true, analyzedVideo: false, error: warning });
+    return jsonResponse({ summary: fallbackSummary, fallback: true, analyzedVideo: false, mediaStatus: media.skippedReason || "gateway_failed", error: warning });
   } catch (e) {
     console.error("summarize error:", e);
     return jsonResponse({
