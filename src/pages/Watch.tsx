@@ -87,6 +87,7 @@ const Watch = () => {
   const [subscribed, setSubscribed] = useState(false);
   const [trendingVideos, setTrendingVideos] = useState<TrendingVideo[]>([]);
   const [aiSummary, setAiSummary] = useState("");
+  const [aiSummaryStatus, setAiSummaryStatus] = useState<"video" | "fallback" | "text" | null>(null);
   const [summaryLoading, setSummaryLoading] = useState(false);
   const [replyTo, setReplyTo] = useState<string | null>(null);
   const [replyText, setReplyText] = useState("");
@@ -266,6 +267,7 @@ const Watch = () => {
     if (!video) return;
     setSummaryLoading(true);
     setAiSummary("");
+    setAiSummaryStatus(null);
 
     try {
       const { data, error } = await supabase.functions.invoke("summarize-video", {
@@ -280,6 +282,7 @@ const Watch = () => {
 
       if (error) throw error;
       setAiSummary(data.summary || (language === "tr" ? "Özet oluşturulamadı." : "Could not generate summary."));
+      setAiSummaryStatus(data.analyzedVideo ? "video" : data.fallback ? "fallback" : "text");
       if (data.fallback || data.error) {
         toast({
           title: language === "tr" ? "AI özeti yedek modda" : "AI summary in fallback mode",
@@ -418,9 +421,16 @@ const Watch = () => {
               {/* AI Summary */}
               {aiSummary && (
                 <div className="p-4 bg-primary/5 border border-primary/20 rounded-xl">
-                  <div className="flex items-center gap-2 mb-2">
+                  <div className="flex flex-wrap items-center gap-2 mb-2">
                     <Sparkles className="w-4 h-4 text-primary" />
-                    <span className="font-semibold text-sm">{language === "tr" ? "AI Özet (Gemini)" : "AI Summary (Gemini)"}</span>
+                    <span className="font-semibold text-sm">{language === "tr" ? "AI Özet" : "AI Summary"}</span>
+                    {aiSummaryStatus && (
+                      <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
+                        {aiSummaryStatus === "video"
+                          ? (language === "tr" ? "Video izlendi" : "Video analyzed")
+                          : (language === "tr" ? "Metin yedek modu" : "Text fallback")}
+                      </span>
+                    )}
                   </div>
                   <p className="text-muted-foreground text-sm">{aiSummary}</p>
                 </div>
