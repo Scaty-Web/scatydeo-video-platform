@@ -30,16 +30,6 @@ const inferMimeType = (url: string, fallback = "application/octet-stream") => {
   return fallback;
 };
 
-const arrayBufferToBase64 = (buffer: ArrayBuffer) => {
-  const bytes = new Uint8Array(buffer);
-  let binary = "";
-  const chunkSize = 0x8000;
-  for (let i = 0; i < bytes.length; i += chunkSize) {
-    binary += String.fromCharCode(...bytes.subarray(i, i + chunkSize));
-  }
-  return btoa(binary);
-};
-
 const createMediaBlock = async (url: string): Promise<{ block: Record<string, unknown> | null; skippedReason?: string }> => {
   if (!url) return { block: null, skippedReason: "missing_url" };
 
