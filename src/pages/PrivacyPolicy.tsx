@@ -17,9 +17,6 @@ const PrivacyPolicy = () => {
         items: [
           "Hesap oluşturma sırasında e-posta adresi ve kullanıcı adı",
           "Profil bilgileri (görünen ad, avatar, biyografi)",
-          "Yüklenen videolar ve içerikler",
-          "Yorum ve etkileşim verileri",
-          "Kullanım istatistikleri ve cihaz bilgileri",
         ],
       },
       {
@@ -37,8 +34,7 @@ const PrivacyPolicy = () => {
         icon: Lock,
         title: "Veri Güvenliği",
         items: [
-          "Tüm veriler şifreleme ile korunur",
-          "Düzenli güvenlik denetimleri yapılır",
+          "Toplanan veriler şifrelenir ve gizli/özel veritabanında saklanır ve bakılmaz",
           "Erişim kontrolleri ile verileriniz güvende",
           "Üçüncü taraflarla izinsiz veri paylaşımı yapılmaz",
         ],
@@ -66,9 +62,6 @@ const PrivacyPolicy = () => {
         items: [
           "Email address and username during account creation",
           "Profile information (display name, avatar, bio)",
-          "Uploaded videos and content",
-          "Comments and interaction data",
-          "Usage statistics and device information",
         ],
       },
       {
@@ -86,8 +79,7 @@ const PrivacyPolicy = () => {
         icon: Lock,
         title: "Data Security",
         items: [
-          "All data is protected with encryption",
-          "Regular security audits are conducted",
+          "Collected data is encrypted and stored in a private/secure database and is not accessed",
           "Your data is secured with access controls",
           "No unauthorized sharing of data with third parties",
         ],
