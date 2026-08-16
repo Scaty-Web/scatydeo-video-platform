@@ -921,6 +921,15 @@ export type Database = {
       }
       is_calling_user_banned: { Args: never; Returns: boolean }
       is_user_banned: { Args: { _user_id: string }; Returns: boolean }
+      lookup_login_profile: {
+        Args: { _email: string }
+        Returns: {
+          avatar_url: string
+          display_name: string
+          found: boolean
+          username: string
+        }[]
+      }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user" | "default_mod" | "duo_mod"
