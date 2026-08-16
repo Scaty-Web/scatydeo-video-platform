@@ -71,17 +71,10 @@ const Auth = () => {
     const r = emailSchema.safeParse(email);
     if (!r.success) { setErrors({ email: r.error.errors[0].message }); return; }
     setErrors({});
-    setIsLoading(true);
-    const { data } = await supabase.rpc("get_profile_by_email", { _email: email });
-    setIsLoading(false);
-    if (data && data.length > 0) {
-      setFoundProfile(data[0] as any);
-      setStep("password");
-    } else {
-      // No account → offer signup
-      setFoundProfile(null);
-      setStep("signup");
-    }
+    // Not: e-posta ile profil sorgusu güvenlik nedeniyle anonim kullanıcılara kapalı
+    // (hesap sızdırma / email enumeration). Bu yüzden doğrudan şifre adımına geçiyoruz.
+    setFoundProfile(null);
+    setStep("password");
   };
 
   const handleSignIn = async (e: React.FormEvent) => {
@@ -231,6 +224,9 @@ const Auth = () => {
         {/* STEP: password */}
         {step === "password" && (
           <form onSubmit={handleSignIn} className="space-y-4">
+            <p className="text-sm text-muted-foreground text-center">
+              <span className="text-foreground font-medium">{email}</span> ile giriş yap
+            </p>
             <div className="space-y-2">
               <Label>{t.auth.password}</Label>
               <div className="relative">
@@ -260,6 +256,12 @@ const Auth = () => {
             <Button type="submit" className="w-full h-12 rounded-full m3-fab !h-12 !px-6" disabled={isLoading}>
               {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : t.auth.loginBtn}
             </Button>
+            <p className="text-center text-sm text-muted-foreground">
+              Hesabın yok mu?{" "}
+              <button type="button" onClick={() => { setErrors({}); setStep("signup"); }} className="text-primary hover:underline">
+                Kayıt ol
+              </button>
+            </p>
           </form>
         )}
 
@@ -292,7 +294,7 @@ const Auth = () => {
         {step === "signup" && (
           <form onSubmit={handleSignUp} className="space-y-4">
             <p className="text-sm text-muted-foreground text-center">
-              Bu e-posta ile hesap bulunamadı. Yeni hesap oluştur.
+              <span className="text-foreground font-medium">{email}</span> ile yeni hesap oluştur.
             </p>
             <div className="space-y-2">
               <Label>{t.auth.username}</Label>
@@ -313,6 +315,9 @@ const Auth = () => {
             <div className="flex justify-between text-sm">
               <button type="button" onClick={() => setStep("email")} className="text-muted-foreground hover:underline flex items-center gap-1">
                 <ArrowLeft className="w-3 h-3" /> Geri
+              </button>
+              <button type="button" onClick={() => { setErrors({}); setStep("password"); }} className="text-primary hover:underline">
+                Zaten hesabım var
               </button>
             </div>
             <Button type="submit" className="w-full h-12 rounded-full m3-fab !h-12 !px-6" disabled={isLoading}>
