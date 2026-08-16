@@ -71,17 +71,10 @@ const Auth = () => {
     const r = emailSchema.safeParse(email);
     if (!r.success) { setErrors({ email: r.error.errors[0].message }); return; }
     setErrors({});
-    setIsLoading(true);
-    const { data } = await supabase.rpc("get_profile_by_email", { _email: email });
-    setIsLoading(false);
-    if (data && data.length > 0) {
-      setFoundProfile(data[0] as any);
-      setStep("password");
-    } else {
-      // No account → offer signup
-      setFoundProfile(null);
-      setStep("signup");
-    }
+    // Not: e-posta ile profil sorgusu güvenlik nedeniyle anonim kullanıcılara kapalı
+    // (hesap sızdırma / email enumeration). Bu yüzden doğrudan şifre adımına geçiyoruz.
+    setFoundProfile(null);
+    setStep("password");
   };
 
   const handleSignIn = async (e: React.FormEvent) => {
