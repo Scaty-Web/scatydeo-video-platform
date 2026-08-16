@@ -294,7 +294,7 @@ const Auth = () => {
         {step === "signup" && (
           <form onSubmit={handleSignUp} className="space-y-4">
             <p className="text-sm text-muted-foreground text-center">
-              Bu e-posta ile hesap bulunamadı. Yeni hesap oluştur.
+              <span className="text-foreground font-medium">{email}</span> ile yeni hesap oluştur.
             </p>
             <div className="space-y-2">
               <Label>{t.auth.username}</Label>
@@ -315,6 +315,9 @@ const Auth = () => {
             <div className="flex justify-between text-sm">
               <button type="button" onClick={() => setStep("email")} className="text-muted-foreground hover:underline flex items-center gap-1">
                 <ArrowLeft className="w-3 h-3" /> Geri
+              </button>
+              <button type="button" onClick={() => { setErrors({}); setStep("password"); }} className="text-primary hover:underline">
+                Zaten hesabım var
               </button>
             </div>
             <Button type="submit" className="w-full h-12 rounded-full m3-fab !h-12 !px-6" disabled={isLoading}>
