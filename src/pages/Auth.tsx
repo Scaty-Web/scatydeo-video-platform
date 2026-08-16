@@ -224,6 +224,9 @@ const Auth = () => {
         {/* STEP: password */}
         {step === "password" && (
           <form onSubmit={handleSignIn} className="space-y-4">
+            <p className="text-sm text-muted-foreground text-center">
+              <span className="text-foreground font-medium">{email}</span> ile giriş yap
+            </p>
             <div className="space-y-2">
               <Label>{t.auth.password}</Label>
               <div className="relative">
@@ -253,6 +256,12 @@ const Auth = () => {
             <Button type="submit" className="w-full h-12 rounded-full m3-fab !h-12 !px-6" disabled={isLoading}>
               {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : t.auth.loginBtn}
             </Button>
+            <p className="text-center text-sm text-muted-foreground">
+              Hesabın yok mu?{" "}
+              <button type="button" onClick={() => { setErrors({}); setStep("signup"); }} className="text-primary hover:underline">
+                Kayıt ol
+              </button>
+            </p>
           </form>
         )}
 
