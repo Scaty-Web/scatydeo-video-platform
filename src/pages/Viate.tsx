@@ -12,7 +12,7 @@ import {
   Trash2, Volume2, VolumeX, Film, RotateCcw, Scissors, Gauge, Image as ImageIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import viateLogo from "@/assets/cut-logo.svg";
+import viateLogo from "@/assets/viate-logo.svg";
 
 interface Filters {
   brightness: number; contrast: number; saturate: number;
