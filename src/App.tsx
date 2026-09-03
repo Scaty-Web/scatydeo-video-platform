@@ -34,6 +34,7 @@ import News from "./pages/News";
 import ManageVideos from "./pages/ManageVideos";
 import Viravo from "./pages/Viravo";
 import FoCAM from "./pages/FoCAM";
+import Viate from "./pages/Viate";
 
 const queryClient = new QueryClient();
 
