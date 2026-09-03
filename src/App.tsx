@@ -34,6 +34,7 @@ import News from "./pages/News";
 import ManageVideos from "./pages/ManageVideos";
 import Viravo from "./pages/Viravo";
 import FoCAM from "./pages/FoCAM";
+import Viate from "./pages/Viate";
 
 const queryClient = new QueryClient();
 
@@ -84,7 +85,9 @@ const AppRoutes = () => {
       <Route path="/manage/videos" element={<ManageVideos />} />
       <Route path="/viravo" element={<Viravo />} />
       <Route path="/focam" element={<FoCAM />} />
+      <Route path="/viate" element={<Viate />} />
       <Route path="/banned" element={<Banned />} />
+
       <Route path="*" element={<NotFound />} />
     </Routes>
   );
