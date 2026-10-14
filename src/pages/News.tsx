@@ -8,6 +8,7 @@ import Sidebar from "@/components/Sidebar";
 import BottomNav from "@/components/BottomNav";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
+import GifPicker, { CommentContent, GIF_PREFIX } from "@/components/GifPicker";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Newspaper, MessageCircle, Loader2, Send, Trash2, CornerDownRight } from "lucide-react";
@@ -90,12 +91,12 @@ const News = () => {
     if (next && !comments[id]) await loadComments(id);
   };
 
-  const sendComment = async (newsId: string) => {
+  const sendComment = async (newsId: string, override?: string) => {
     if (!user) {
       navigate("/auth");
       return;
     }
-    const content = (inputs[newsId] || "").trim();
+    const content = (override ?? inputs[newsId] ?? "").trim();
     if (!content) return;
     setPosting((m) => ({ ...m, [newsId]: true }));
     const { data, error } = await supabase
@@ -236,6 +237,7 @@ const News = () => {
                               placeholder={isTr ? "Yorum yaz..." : "Write a comment..."}
                               className="min-h-[44px] max-h-32"
                             />
+                            <GifPicker onSelect={(u) => sendComment(n.id, GIF_PREFIX + u)} />
                             <Button
                               onClick={() => sendComment(n.id)}
                               disabled={!inputs[n.id]?.trim() || posting[n.id]}
@@ -276,7 +278,7 @@ const News = () => {
                                       <p className="text-xs font-semibold">
                                         @{c.profiles?.username || c.profiles?.display_name || "user"}
                                       </p>
-                                      <p className="text-sm">{c.content}</p>
+                                      <CommentContent content={c.content} />
                                       <button
                                         onClick={() => setReplyTo((m) => ({ ...m, [n.id]: m[n.id] === c.id ? null : c.id }))}
                                         className="text-xs text-muted-foreground hover:text-primary mt-1 inline-flex items-center gap-1"
@@ -326,7 +328,7 @@ const News = () => {
                                         <p className="text-xs font-semibold">
                                           @{r.profiles?.username || r.profiles?.display_name || "user"}
                                         </p>
-                                        <p className="text-sm">{r.content}</p>
+                                        <CommentContent content={r.content} />
                                       </div>
                                       {user?.id === r.user_id && (
                                         <button
