@@ -25,16 +25,12 @@ import About from "./pages/About";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import V2Welcome from "./pages/V2Welcome";
 import V3Welcome from "./pages/V3Welcome";
-import LiveStream from "./pages/LiveStream";
-import LiveStreams from "./pages/LiveStreams";
-import LiveWatch from "./pages/LiveWatch";
 import SwitchFeed from "./pages/SwitchFeed";
 import SwitchUpload from "./pages/SwitchUpload";
 import News from "./pages/News";
 import ManageVideos from "./pages/ManageVideos";
 import Viravo from "./pages/Viravo";
 import FoCAM from "./pages/FoCAM";
-import Viate from "./pages/Viate";
 
 const queryClient = new QueryClient();
 
@@ -75,9 +71,6 @@ const AppRoutes = () => {
       <Route path="/privacy" element={<PrivacyPolicy />} />
       <Route path="/v2" element={<V2Welcome />} />
       <Route path="/v3" element={<V3Welcome />} />
-      <Route path="/stream" element={<LiveStream />} />
-      <Route path="/lives" element={<LiveStreams />} />
-      <Route path="/live/:id" element={<LiveWatch />} />
       <Route path="/switch" element={<SwitchFeed />} />
       <Route path="/switch/:id" element={<SwitchFeed />} />
       <Route path="/upload/switch" element={<SwitchUpload />} />
@@ -85,7 +78,6 @@ const AppRoutes = () => {
       <Route path="/manage/videos" element={<ManageVideos />} />
       <Route path="/viravo" element={<Viravo />} />
       <Route path="/focam" element={<FoCAM />} />
-      <Route path="/viate" element={<Viate />} />
       <Route path="/banned" element={<Banned />} />
 
       <Route path="*" element={<NotFound />} />

@@ -4,7 +4,6 @@ import { useAuth } from "@/hooks/useAuth";
 import { useLanguage } from "@/hooks/useLanguage";
 import { cn } from "@/lib/utils";
 import SwitchLogo from "./SwitchLogo";
-import viateLogo from "@/assets/viate-logo.svg";
 
 const BottomNav = () => {
   const location = useLocation();
@@ -15,7 +14,6 @@ const BottomNav = () => {
     { icon: Home, label: language === "tr" ? "Ana Sayfa" : "Home", path: "/" },
     { icon: Flame, label: language === "tr" ? "Trendler" : "Trending", path: "/trending" },
     { icon: null, label: "Switch", path: "/switch", isSwitch: true },
-    { icon: null, label: "Viate", path: "/viate", isViate: true },
     ...(user
       ? [
           { icon: ListVideo, label: language === "tr" ? "Listeler" : "Playlists", path: "/playlists" },
@@ -41,9 +39,9 @@ const BottomNav = () => {
             >
               {item.isSwitch ? (
                 <SwitchLogo size={22} />
-              ) : item.isViate ? (
+              ) : false ? (
                 <img
-                  src={viateLogo}
+                  src=""
                   alt="Viate"
                   className={cn("h-[22px] w-auto", !isActive && "opacity-70")}
                 />
