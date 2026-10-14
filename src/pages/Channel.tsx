@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -49,6 +50,7 @@ const Channel = () => {
   const [videos, setVideos] = useState<Video[]>([]);
   const [switches, setSwitches] = useState<SwitchRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [playlists, setPlaylists] = useState<any[]>([]);
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [modBadge, setModBadge] = useState<"default" | "duo" | null>(null);
 
@@ -88,6 +90,7 @@ const Channel = () => {
       setProfile(profileData);
       fetchVideos(profileData.id);
       fetchSwitches(profileData.id);
+      supabase.from("playlists").select("id, title, description, thumbnail_url").eq("user_id", profileData.id).eq("is_public", true).order("created_at", { ascending: false }).then(({ data }) => setPlaylists(data ?? []));
     }
     setLoading(false);
   };
@@ -265,6 +268,7 @@ const Channel = () => {
           <TabsList className="bg-muted/30">
             <TabsTrigger value="videos">{t.channel.videos}</TabsTrigger>
             <TabsTrigger value="switches">{t.switch.switches}</TabsTrigger>
+            <TabsTrigger value="playlists">{language === "tr" ? "Oynatma Listeleri" : "Playlists"}</TabsTrigger>
             <TabsTrigger value="about">{t.channel.aboutTab}</TabsTrigger>
           </TabsList>
 
@@ -320,6 +324,21 @@ const Channel = () => {
                       </div>
                     </div>
                   </a>
+                ))}
+              </div>
+            )}
+          </TabsContent>
+
+          <TabsContent value="playlists" className="mt-6">
+            {playlists.length === 0 ? (
+              <p className="text-center py-16 text-muted-foreground">{language === "tr" ? "Henüz oynatma listesi yok." : "No playlists yet."}</p>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                {playlists.map((p) => (
+                  <Link key={p.id} to={`/playlist/${p.id}`} className="rounded-xl border border-border bg-card p-4 hover:bg-muted/50 transition-colors">
+                    <p className="font-semibold truncate">{p.title}</p>
+                    {p.description && <p className="text-sm text-muted-foreground line-clamp-2">{p.description}</p>}
+                  </Link>
                 ))}
               </div>
             )}
