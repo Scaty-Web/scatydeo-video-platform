@@ -7,6 +7,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import VideoPlayer from "@/components/VideoPlayer";
 import { Button } from "@/components/ui/button";
+import GifPicker, { CommentContent, GIF_PREFIX } from "@/components/GifPicker";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { 
@@ -227,17 +228,18 @@ const Watch = () => {
     }
   };
 
-  const handleComment = async () => {
+  const handleComment = async (override?: string) => {
+    const body = (override ?? newComment).trim();
     if (!user) {
       toast({ title: t.common.signIn, description: t.watch.signInToComment, variant: "destructive" });
       return;
     }
-    if (!newComment.trim()) return;
+    if (!body) return;
 
     const { error } = await supabase.from("comments").insert({
       video_id: id,
       user_id: user.id,
-      content: newComment.trim(),
+      content: body,
       parent_id: null,
     });
 
@@ -487,11 +489,12 @@ const Watch = () => {
                   disabled={!user}
                   className="bg-muted/30 border-primary/30"
                 />
-                <div className="flex justify-end">
+                <div className="flex justify-end gap-2">
+                  {user && <GifPicker onSelect={(u) => handleComment(GIF_PREFIX + u)} />}
                   <Button
                     variant="hero"
                     size="sm"
-                    onClick={handleComment}
+                    onClick={() => handleComment()}
                     disabled={!user || !newComment.trim()}
                   >
                     {t.watch.postComment}
@@ -524,7 +527,7 @@ const Watch = () => {
                                 </Link>
                                 <span className="text-sm text-muted-foreground">{formatDate(comment.created_at)}</span>
                               </div>
-                              <p className="mt-1">{comment.content}</p>
+                              <div className="mt-1"><CommentContent content={comment.content} /></div>
                               <button
                                 onClick={() => setReplyTo(replyTo === comment.id ? null : comment.id)}
                                 className="text-xs text-muted-foreground hover:text-primary mt-1 inline-flex items-center gap-1"
@@ -565,7 +568,7 @@ const Watch = () => {
                                   </Link>
                                   <span className="text-xs text-muted-foreground">{formatDate(r.created_at)}</span>
                                 </div>
-                                <p className="mt-1 text-sm">{r.content}</p>
+                                <div className="mt-1"><CommentContent content={r.content} /></div>
                               </div>
                             </div>
                           ))}

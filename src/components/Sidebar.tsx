@@ -16,14 +16,12 @@ const Sidebar = ({ collapsed = false }: SidebarProps) => {
   const mainItems = [
     { icon: Home, label: t.nav.home, path: "/" },
     { icon: Flame, label: language === "tr" ? "Trendler" : "Trending", path: "/trending" },
-    { icon: Radio, label: language === "tr" ? "Canlı Yayınlar" : "Live Streams", path: "/lives" },
     { icon: Newspaper, label: language === "tr" ? "Haberler" : "News", path: "/news" },
   ];
 
   const userItems = user
     ? [
         { icon: Upload, label: t.nav.uploadVideo, path: "/upload" },
-        { icon: Radio, label: t.stream.title, path: "/stream" },
         { icon: ListVideo, label: t.playlist.myPlaylists, path: "/playlists" },
         { icon: Settings, label: t.nav.settings, path: "/settings" },
       ]
@@ -59,7 +57,7 @@ const Sidebar = ({ collapsed = false }: SidebarProps) => {
   return (
     <aside
       className={cn(
-        "fixed left-0 top-14 bottom-0 z-40 bg-background border-r border-border overflow-y-auto transition-all duration-200",
+        "fixed left-0 top-[var(--nav-h,3.5rem)] bottom-0 z-40 bg-background border-r border-border overflow-y-auto transition-[top,width] duration-200",
         collapsed ? "w-[72px]" : "w-56"
       )}
     >
