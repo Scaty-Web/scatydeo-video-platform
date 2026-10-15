@@ -100,12 +100,14 @@ const VideoPlayer = ({ src, poster, className }: VideoPlayerProps) => {
   // Handle fullscreen changes
   useEffect(() => {
     const handleFullscreenChange = () => {
-      setIsFullscreen(!!document.fullscreenElement);
+      setIsFullscreen(!!(document.fullscreenElement || (document as any).webkitFullscreenElement));
     };
 
     document.addEventListener("fullscreenchange", handleFullscreenChange);
+    document.addEventListener("webkitfullscreenchange", handleFullscreenChange);
     return () => {
       document.removeEventListener("fullscreenchange", handleFullscreenChange);
+      document.removeEventListener("webkitfullscreenchange", handleFullscreenChange);
     };
   }, []);
 
@@ -201,20 +203,28 @@ const VideoPlayer = ({ src, poster, className }: VideoPlayerProps) => {
 
   const toggleFullscreen = async () => {
     const container = containerRef.current;
+    const video = videoRef.current as any;
     if (!container) return;
+    const anyDoc = document as any;
+    const anyEl = container as any;
+    const fsEl = document.fullscreenElement || anyDoc.webkitFullscreenElement;
     try {
-      const anyDoc = document as any;
-      const anyEl = container as any;
-      const fsEl = document.fullscreenElement || anyDoc.webkitFullscreenElement || anyDoc.msFullscreenElement;
-      if (!fsEl) {
-        const req = container.requestFullscreen || anyEl.webkitRequestFullscreen || anyEl.msRequestFullscreen;
-        if (req) await req.call(container);
-      } else {
-        const exit = document.exitFullscreen || anyDoc.webkitExitFullscreen || anyDoc.msExitFullscreen;
+      if (fsEl) {
+        const exit = document.exitFullscreen || anyDoc.webkitExitFullscreen;
         if (exit) await exit.call(document);
+        return;
       }
+      const req = container.requestFullscreen || anyEl.webkitRequestFullscreen;
+      if (req) {
+        await req.call(container);
+        try { await (screen.orientation as any)?.lock?.("landscape"); } catch { /* not supported */ }
+        return;
+      }
+      // iPhone Safari: only the video element itself can go fullscreen
+      if (video?.webkitEnterFullscreen) video.webkitEnterFullscreen();
     } catch (err) {
-      console.warn("Fullscreen error:", err);
+      if (video?.webkitEnterFullscreen) video.webkitEnterFullscreen();
+      else console.warn("Fullscreen error:", err);
     }
   };
 
