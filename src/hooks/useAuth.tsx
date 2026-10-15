@@ -23,7 +23,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         setSession(session);
-        setUser(session?.user ?? null);
+        setUser((prev) => { const next = session?.user ?? null; return prev && next && prev.id === next.id ? prev : next; });
         setLoading(false);
       }
     );
@@ -31,7 +31,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     // THEN check for existing session
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       setSession(session);
-      setUser(session?.user ?? null);
+      setUser((prev) => { const next = session?.user ?? null; return prev && next && prev.id === next.id ? prev : next; });
       setLoading(false);
 
       // Validate the token actually works (catches stale tokens missing 'sub' claim).
