@@ -102,13 +102,13 @@ const Watch = () => {
         checkIfLiked();
       }
     }
-  }, [id, user]);
+  }, [id, user?.id]);
 
   useEffect(() => {
     if (user && video) {
       checkIfSubscribed();
     }
-  }, [user, video]);
+  }, [user?.id, video?.id]);
 
   const fetchTrending = async () => {
     const { data } = await supabase
