@@ -9,6 +9,8 @@ import BottomNav from "@/components/BottomNav";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import GifPicker, { CommentContent, GIF_PREFIX } from "@/components/GifPicker";
+import ReplyComposer from "@/components/ReplyComposer";
+import { getThreadReplies } from "@/lib/commentThreads";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Newspaper, MessageCircle, Loader2, Send, Trash2, CornerDownRight } from "lucide-react";
@@ -121,10 +123,10 @@ const News = () => {
     setInputs((m) => ({ ...m, [newsId]: "" }));
   };
 
-  const sendReply = async (newsId: string, parentId: string) => {
+  const sendReply = async (newsId: string, parentId: string, override?: string) => {
     if (!user) { navigate("/auth"); return; }
-    const content = (replyText[parentId] || "").trim();
-    if (!content) return;
+    const content = (override ?? replyText[parentId] ?? "").trim();
+    if (!content || replyBusy[parentId]) return;
     setReplyBusy((m) => ({ ...m, [parentId]: true }));
     const { data, error } = await supabase
       .from("news_comments")
@@ -264,7 +266,7 @@ const News = () => {
                           list
                             .filter((c) => !c.parent_id)
                             .map((c) => {
-                              const replies = list.filter((r) => r.parent_id === c.id);
+                               const replies = getThreadReplies(list, c.id);
                               return (
                                 <div key={c.id} className="space-y-2">
                                   <div className="flex gap-2 group">
@@ -274,18 +276,18 @@ const News = () => {
                                         {(c.profiles?.display_name || c.profiles?.username || "?").charAt(0)}
                                       </AvatarFallback>
                                     </Avatar>
-                                    <div className="flex-1">
+                                    <div className="flex-1 min-w-0">
                                       <p className="text-xs font-semibold">
                                         @{c.profiles?.username || c.profiles?.display_name || "user"}
                                       </p>
                                       <CommentContent content={c.content} />
-                                      <button
+                                      <Button variant="ghost" size="sm"
                                         onClick={() => setReplyTo((m) => ({ ...m, [n.id]: m[n.id] === c.id ? null : c.id }))}
-                                        className="text-xs text-muted-foreground hover:text-primary mt-1 inline-flex items-center gap-1"
+                                        className="h-7 px-1 text-xs text-muted-foreground mt-1 gap-1"
                                       >
                                         <CornerDownRight className="w-3 h-3" />
                                         {isTr ? "Yanıtla" : "Reply"}
-                                      </button>
+                                      </Button>
                                     </div>
                                     {user?.id === c.user_id && (
                                       <button
@@ -299,36 +301,47 @@ const News = () => {
                                   </div>
 
                                   {replyTo[n.id] === c.id && user && (
-                                    <div className="ml-10 flex gap-2">
-                                      <Textarea
+                                    <div className="ml-4 sm:ml-10">
+                                      <ReplyComposer
                                         value={replyText[c.id] || ""}
-                                        onChange={(e) => setReplyText((m) => ({ ...m, [c.id]: e.target.value }))}
-                                        placeholder={isTr ? "Yanıt yaz..." : "Write a reply..."}
-                                        className="min-h-[40px] max-h-32"
+                                        onChange={(value) => setReplyText((m) => ({ ...m, [c.id]: value }))}
+                                        onSend={(content) => sendReply(n.id, c.id, content)}
+                                        busy={replyBusy[c.id]}
                                       />
-                                      <Button
-                                        onClick={() => sendReply(n.id, c.id)}
-                                        disabled={!replyText[c.id]?.trim() || replyBusy[c.id]}
-                                        size="icon"
-                                      >
-                                        {replyBusy[c.id] ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-                                      </Button>
                                     </div>
                                   )}
 
                                   {replies.map((r) => (
-                                    <div key={r.id} className="ml-10 flex gap-2 group border-l-2 border-primary/30 pl-3">
+                                    <div key={r.id} className="ml-4 sm:ml-10 flex gap-2 group border-l-2 border-primary/30 pl-3">
                                       <Avatar className="w-7 h-7">
                                         <AvatarImage src={getAvatarUrl(r.profiles?.avatar_url)} />
                                         <AvatarFallback>
                                           {(r.profiles?.display_name || r.profiles?.username || "?").charAt(0)}
                                         </AvatarFallback>
                                       </Avatar>
-                                      <div className="flex-1">
+                                      <div className="flex-1 min-w-0">
                                         <p className="text-xs font-semibold">
                                           @{r.profiles?.username || r.profiles?.display_name || "user"}
                                         </p>
+                                        {r.parent_id !== c.id && (
+                                          <p className="text-xs text-muted-foreground mt-1">
+                                            @{list.find((target) => target.id === r.parent_id)?.profiles?.username || "user"}
+                                          </p>
+                                        )}
                                         <CommentContent content={r.content} />
+                                        <Button variant="ghost" size="sm" disabled={replyBusy[r.id]}
+                                          onClick={() => setReplyTo((m) => ({ ...m, [n.id]: m[n.id] === r.id ? null : r.id }))}
+                                          className="h-7 px-1 text-xs text-muted-foreground mt-1 gap-1">
+                                          <CornerDownRight className="w-3 h-3" />
+                                          {isTr ? "Yanıtla" : "Reply"}
+                                        </Button>
+                                        {replyTo[n.id] === r.id && user && (
+                                          <div className="mt-2">
+                                            <ReplyComposer value={replyText[r.id] || ""}
+                                              onChange={(value) => setReplyText((m) => ({ ...m, [r.id]: value }))}
+                                              onSend={(content) => sendReply(n.id, r.id, content)} busy={replyBusy[r.id]} />
+                                          </div>
+                                        )}
                                       </div>
                                       {user?.id === r.user_id && (
                                         <button
