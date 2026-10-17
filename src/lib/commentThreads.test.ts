@@ -1,4 +1,5 @@
-import { expect, test } from "bun:test";
+import { test } from "node:test";
+import assert from "node:assert/strict";
 import { getThreadReplies } from "./commentThreads";
 
 test("replies to replies stay in their original thread and retain their target", () => {
@@ -10,13 +11,13 @@ test("replies to replies stay in their original thread and retain their target",
     { id: "other", parent_id: null },
     { id: "unrelated", parent_id: "other" },
   ];
-  expect(getThreadReplies(comments, "root")).toEqual(comments.slice(1, 4));
-  expect(getThreadReplies(comments, "root")[1].parent_id).toBe("reply");
+  assert.deepEqual(getThreadReplies(comments, "root"), comments.slice(1, 4));
+  assert.equal(getThreadReplies(comments, "root")[1].parent_id, "reply");
 });
 
 test("malformed cycles cannot repeat replies", () => {
-  expect(getThreadReplies([
+  assert.deepEqual(getThreadReplies([
     { id: "root", parent_id: "reply" },
     { id: "reply", parent_id: "root" },
-  ], "root")).toEqual([{ id: "reply", parent_id: "root" }]);
+  ], "root"), [{ id: "reply", parent_id: "root" }]);
 });
