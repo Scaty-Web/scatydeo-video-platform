@@ -16,7 +16,7 @@ export const CommentContent = ({ content }: { content: string }) =>
     <p className="text-sm">{content}</p>
   );
 
-const GifPicker = ({ onSelect }: { onSelect: (url: string) => void }) => {
+const GifPicker = ({ onSelect, disabled = false }: { onSelect: (url: string) => void; disabled?: boolean }) => {
   const [open, setOpen] = useState(false);
   const [q, setQ] = useState("");
   const [gifs, setGifs] = useState<{ id: number; url: string; title: string }[]>([]);
@@ -36,7 +36,7 @@ const GifPicker = ({ onSelect }: { onSelect: (url: string) => void }) => {
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <Button type="button" variant="outline" size="icon" className="font-bold text-xs">GIF</Button>
+        <Button type="button" variant="outline" size="icon" disabled={disabled} aria-label="GIF" className="font-bold text-xs">GIF</Button>
       </PopoverTrigger>
       <PopoverContent className="w-80 p-2" align="end">
         <Input placeholder="GIF ara..." value={q} onChange={(e) => setQ(e.target.value)} className="mb-2" />
@@ -45,9 +45,9 @@ const GifPicker = ({ onSelect }: { onSelect: (url: string) => void }) => {
             <Loader2 className="w-5 h-5 animate-spin col-span-3 mx-auto my-6 text-primary" />
           ) : (
             gifs.map((g) => (
-              <button key={g.id} onClick={() => { onSelect(g.url); setOpen(false); }}>
+              <Button type="button" variant="ghost" className="h-20 p-0" disabled={disabled} key={g.id} onClick={() => { onSelect(g.url); setOpen(false); }}>
                 <img src={g.url} alt={g.title} loading="lazy" className="w-full h-20 object-cover rounded" />
-              </button>
+              </Button>
             ))
           )}
         </div>

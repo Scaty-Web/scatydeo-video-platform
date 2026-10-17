@@ -8,6 +8,8 @@ import Footer from "@/components/Footer";
 import VideoPlayer from "@/components/VideoPlayer";
 import { Button } from "@/components/ui/button";
 import GifPicker, { CommentContent, GIF_PREFIX } from "@/components/GifPicker";
+import ReplyComposer from "@/components/ReplyComposer";
+import { getThreadReplies } from "@/lib/commentThreads";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { 
@@ -92,6 +94,7 @@ const Watch = () => {
   const [summaryLoading, setSummaryLoading] = useState(false);
   const [replyTo, setReplyTo] = useState<string | null>(null);
   const [replyText, setReplyText] = useState("");
+  const [replyBusy, setReplyBusy] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -250,18 +253,23 @@ const Watch = () => {
     }
   };
 
-  const handleReply = async (parentId: string) => {
-    if (!user || !replyText.trim()) return;
+  const handleReply = async (parentId: string, content: string) => {
+    const body = content.trim();
+    if (!user || !body || replyBusy) return;
+    setReplyBusy(true);
     const { error } = await supabase.from("comments").insert({
       video_id: id,
       user_id: user.id,
-      content: replyText.trim(),
+      content: body,
       parent_id: parentId,
     });
+    setReplyBusy(false);
     if (!error) {
       setReplyText("");
       setReplyTo(null);
       fetchComments();
+    } else {
+      toast({ title: language === "tr" ? "Yanıt gönderilemedi" : "Could not send reply", description: language === "tr" ? "Lütfen tekrar deneyin." : "Please try again.", variant: "destructive" });
     }
   };
 
@@ -509,7 +517,7 @@ const Watch = () => {
                   comments
                     .filter((c) => !c.parent_id)
                     .map((comment) => {
-                      const replies = comments.filter((r) => r.parent_id === comment.id);
+                      const replies = getThreadReplies(comments, comment.id);
                       return (
                         <div key={comment.id} className="space-y-2">
                           <div className="flex gap-3">
@@ -517,7 +525,7 @@ const Watch = () => {
                               <AvatarImage src={getAvatarUrl(comment.profiles.avatar_url)} />
                               <AvatarFallback><User className="w-4 h-4" /></AvatarFallback>
                             </Avatar>
-                            <div className="flex-1">
+                            <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-2">
                                 <Link
                                   to={`/channel/${comment.profiles.username}`}
@@ -528,37 +536,35 @@ const Watch = () => {
                                 <span className="text-sm text-muted-foreground">{formatDate(comment.created_at)}</span>
                               </div>
                               <div className="mt-1"><CommentContent content={comment.content} /></div>
-                              <button
-                                onClick={() => setReplyTo(replyTo === comment.id ? null : comment.id)}
-                                className="text-xs text-muted-foreground hover:text-primary mt-1 inline-flex items-center gap-1"
+                              <Button
+                                variant="ghost" size="sm" disabled={replyBusy}
+                                onClick={() => { setReplyTo(replyTo === comment.id ? null : comment.id); setReplyText(""); }}
+                                className="h-7 px-1 text-xs text-muted-foreground mt-1 gap-1"
                               >
                                 <CornerDownRight className="w-3 h-3" />
                                 {language === "tr" ? "Yanıtla" : "Reply"}
-                              </button>
+                              </Button>
                             </div>
                           </div>
 
                           {replyTo === comment.id && user && (
-                            <div className="ml-13 pl-10 flex gap-2">
-                              <Textarea
+                            <div className="pl-4 sm:pl-10">
+                              <ReplyComposer
                                 value={replyText}
-                                onChange={(e) => setReplyText(e.target.value)}
-                                placeholder={language === "tr" ? "Yanıt yaz..." : "Write a reply..."}
-                                className="min-h-[40px] max-h-32 bg-muted/30 border-primary/30"
+                                onChange={setReplyText}
+                                onSend={(content) => handleReply(comment.id, content)}
+                                busy={replyBusy}
                               />
-                              <Button onClick={() => handleReply(comment.id)} disabled={!replyText.trim()} size="icon">
-                                <Send className="w-4 h-4" />
-                              </Button>
                             </div>
                           )}
 
                           {replies.map((r) => (
-                            <div key={r.id} className="ml-13 pl-10 flex gap-3 border-l-2 border-primary/30">
+                            <div key={r.id} className="pl-4 sm:pl-10 flex gap-3 border-l-2 border-primary/30">
                               <Avatar className="w-8 h-8">
                                 <AvatarImage src={getAvatarUrl(r.profiles.avatar_url)} />
                                 <AvatarFallback><User className="w-3 h-3" /></AvatarFallback>
                               </Avatar>
-                              <div className="flex-1">
+                              <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-2">
                                   <Link
                                     to={`/channel/${r.profiles.username}`}
@@ -568,7 +574,24 @@ const Watch = () => {
                                   </Link>
                                   <span className="text-xs text-muted-foreground">{formatDate(r.created_at)}</span>
                                 </div>
+                                {r.parent_id !== comment.id && (
+                                  <p className="text-xs text-muted-foreground mt-1">
+                                    @{comments.find((target) => target.id === r.parent_id)?.profiles?.username || "user"}
+                                  </p>
+                                )}
                                 <div className="mt-1"><CommentContent content={r.content} /></div>
+                                <Button variant="ghost" size="sm" disabled={replyBusy}
+                                  onClick={() => { setReplyTo(replyTo === r.id ? null : r.id); setReplyText(""); }}
+                                  className="h-7 px-1 text-xs text-muted-foreground mt-1 gap-1">
+                                  <CornerDownRight className="w-3 h-3" />
+                                  {language === "tr" ? "Yanıtla" : "Reply"}
+                                </Button>
+                                {replyTo === r.id && user && (
+                                  <div className="mt-2">
+                                    <ReplyComposer value={replyText} onChange={setReplyText}
+                                      onSend={(content) => handleReply(r.id, content)} busy={replyBusy} />
+                                  </div>
+                                )}
                               </div>
                             </div>
                           ))}

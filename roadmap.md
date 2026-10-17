@@ -1,0 +1,2 @@
+- [x] Video ve haber yorumlarında yanıtlara yanıt ve GIF gönderimi.
+- [x] Yanıtların kaydedilip tekrar gösterildiğini doğrula.
