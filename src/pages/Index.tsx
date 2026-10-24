@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { Navigate } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import Sidebar from "@/components/Sidebar";
 import BottomNav from "@/components/BottomNav";
@@ -7,16 +6,9 @@ import VideoGrid from "@/components/VideoGrid";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
 
-const COOKIE_KEY = "scatydeo_v3_seen";
-
 const Index = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const isMobile = useIsMobile();
-
-  // First visit → redirect to /v3
-  if (!localStorage.getItem(COOKIE_KEY)) {
-    return <Navigate to="/v3" replace />;
-  }
 
   return (
     <div className="md3-scope min-h-screen bg-background">
