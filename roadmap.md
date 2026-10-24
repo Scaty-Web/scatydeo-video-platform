@@ -1,2 +1,3 @@
 - [x] Video ve haber yorumlarında yanıtlara yanıt ve GIF gönderimi.
 - [x] Yanıtların kaydedilip tekrar gösterildiğini doğrula.
+- [x] İlk ziyarette /v3 tanıtımı yerine doğrudan ana sayfaya gir.
