@@ -1,0 +1,3 @@
+DROP POLICY IF EXISTS "Admins and moderators can send notifications" ON public.notifications;
+CREATE POLICY "Admins and moderators can send notifications" ON public.notifications FOR INSERT TO authenticated
+WITH CHECK (NOT public.is_calling_user_banned() AND (public.has_role(auth.uid(),'admin') OR public.has_role(auth.uid(),'moderator') OR public.has_role(auth.uid(),'default_mod') OR public.has_role(auth.uid(),'duo_mod')));
