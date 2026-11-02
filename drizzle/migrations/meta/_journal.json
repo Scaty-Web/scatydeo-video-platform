@@ -8,6 +8,13 @@
       "when": 1792002046983,
       "tag": "0000_public_news_read",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1793639410650,
+      "tag": "0001_mods_can_send_notifications",
+      "breakpoints": true
     }
   ]
 }
