@@ -31,6 +31,7 @@ import News from "./pages/News";
 import ManageVideos from "./pages/ManageVideos";
 import Viravo from "./pages/Viravo";
 import FoCAM from "./pages/FoCAM";
+import AIStudio from "./pages/AIStudio";
 
 const queryClient = new QueryClient();
 
@@ -55,6 +56,7 @@ const AppRoutes = () => {
   return (
     <Routes>
       <Route path="/" element={<Index />} />
+      <Route path="/ai-studio" element={<AIStudio />} />
       <Route path="/trending" element={<Trending />} />
       <Route path="/auth" element={<Auth />} />
       <Route path="/watch/:id" element={<Watch />} />

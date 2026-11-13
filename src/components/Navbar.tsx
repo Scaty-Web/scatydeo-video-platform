@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Play, Search, Menu, Bell, User, Settings, LogOut, Upload, Shield, SlidersHorizontal, Video, ChevronUp, ChevronDown } from "lucide-react";
+import { Play, Search, Menu, Bell, User, Settings, LogOut, Upload, Shield, SlidersHorizontal, Video, ChevronUp, ChevronDown, Sparkles } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
@@ -170,6 +170,11 @@ const Navbar = ({ onToggleSidebar }: NavbarProps) => {
 
           {user ? (
             <>
+              <Link to="/ai-studio">
+                <Button variant="ghost" size="icon" className="rounded-full text-primary" title="Scatydeo AI Studio">
+                  <Sparkles className="w-5 h-5" />
+                </Button>
+              </Link>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" size="icon" className="rounded-full" title={t.nav.uploadVideo}>
