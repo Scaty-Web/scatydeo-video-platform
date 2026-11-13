@@ -2,7 +2,7 @@ import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 import { createClient } from "npm:@supabase/supabase-js@2";
 
 const GW = "https://ai.gateway.lovable.dev/v1";
-const PLAN_MODELS = ["google/gemini-2.5-pro", "google/gemini-2.5-flash"];
+const PLAN_MODELS = ["google/gemini-3.8-flash"];
 const TTS_MODELS = ["google/gemini-3.1-flash-tts-preview", "google/gemini-2.5-flash-tts", "google/gemini-2.5-pro-tts"];
 const VOICES = ["Kore", "Puck", "Charon", "Fenrir", "Aoede", "Zephyr", "Leda", "Orus"];
 
