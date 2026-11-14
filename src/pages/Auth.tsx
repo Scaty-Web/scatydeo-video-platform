@@ -11,10 +11,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { getAvatarUrl } from "@/lib/defaults";
 import { z } from "zod";
+import { normalizeEmail, normalizeUsername, signupErrorMessage } from "@/lib/authInput";
 import viravoAsset from "@/assets/viravo.mp3.asset.json";
 
 
-type Step = "email" | "password" | "signup" | "otp_sent" | "otp_verify" | "post_otp" | "reset_password";
+type Step = "email" | "password" | "signup" | "signup_sent" | "otp_sent" | "otp_verify" | "post_otp" | "reset_password";
 
 const Auth = () => {
   const { t } = useLanguage();
@@ -68,11 +69,13 @@ const Auth = () => {
 
   const handleEmailNext = async (e: React.FormEvent) => {
     e.preventDefault();
-    const r = emailSchema.safeParse(email);
+    const cleanEmail = normalizeEmail(email);
+    const r = emailSchema.safeParse(cleanEmail);
     if (!r.success) { setErrors({ email: r.error.errors[0].message }); return; }
     setErrors({});
     setIsLoading(true);
-    const { data, error } = await supabase.rpc("lookup_login_profile", { _email: email.trim() });
+    setEmail(cleanEmail);
+    const { data, error } = await supabase.rpc("lookup_login_profile", { _email: cleanEmail });
     setIsLoading(false);
     const profile = Array.isArray(data) ? data[0] : null;
     if (error) {
@@ -114,18 +117,24 @@ const Auth = () => {
     const newErrors: typeof errors = {};
     const pr = passwordSchema.safeParse(password);
     if (!pr.success) newErrors.password = pr.error.errors[0].message;
-    const ur = usernameSchema.safeParse(username);
+    const ur = usernameSchema.safeParse(normalizeUsername(username));
     if (!ur.success) newErrors.username = ur.error.errors[0].message;
     if (Object.keys(newErrors).length) { setErrors(newErrors); return; }
     setErrors({});
     setIsLoading(true);
-    const { error } = await signUp(email, password, username);
-    setIsLoading(false);
-    if (error) {
-      toast({ title: t.auth.signupFailed, description: "İşlem başarısız oldu. Lütfen tekrar deneyin.", variant: "destructive" });
-    } else {
-      toast({ title: t.auth.signupSuccess, description: t.auth.accountCreated });
-    }
+    try {
+      const { error, needsConfirmation } = await signUp(email, password, username);
+      if (error) {
+        toast({ title: t.auth.signupFailed, description: signupErrorMessage(error), variant: "destructive" });
+      } else if (needsConfirmation) {
+        setPassword("");
+        setStep("signup_sent");
+      } else {
+        toast({ title: t.auth.signupSuccess, description: t.auth.accountCreated });
+      }
+    } catch {
+      toast({ title: t.auth.signupFailed, description: "Bağlantını kontrol edip tekrar dene.", variant: "destructive" });
+    } finally { setIsLoading(false); }
   };
 
   const sendOtp = async () => {
@@ -308,6 +317,15 @@ const Auth = () => {
           </div>
         )}
 
+        {step === "signup_sent" && (
+          <div className="space-y-4 text-center">
+            <Mail className="w-10 h-10 mx-auto text-primary" />
+            <h2 className="text-xl font-semibold">E-postanı doğrula</h2>
+            <p className="text-sm text-muted-foreground">{email} adresine gönderilen doğrulama bağlantısını aç. Doğrulama tamamlandığında hesabına giriş yapabilirsin.</p>
+            <Button variant="outline" className="w-full" onClick={() => { setStep("email"); setErrors({}); }}>Girişe dön</Button>
+          </div>
+        )}
+
         {/* STEP: signup (no account found) — render block */}
         {step === "signup" && (
           <form onSubmit={handleSignUp} className="space-y-4">
@@ -318,7 +336,7 @@ const Auth = () => {
               <Label>{t.auth.username}</Label>
               <div className="relative">
                 <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                <Input value={username} onChange={(e) => setUsername(e.target.value)} placeholder={t.auth.usernamePlaceholder} className="pl-10 h-12 rounded-xl bg-background/40 border-primary/30" />
+                <Input autoComplete="username" maxLength={20} value={username} onChange={(e) => setUsername(e.target.value)} placeholder={t.auth.usernamePlaceholder} className="pl-10 h-12 rounded-xl bg-background/40 border-primary/30" />
               </div>
               {errors.username && <p className="text-sm text-red-400">{errors.username}</p>}
             </div>
@@ -326,7 +344,7 @@ const Auth = () => {
               <Label>{t.auth.password}</Label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                <Input type={showPassword ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" className="pl-10 h-12 rounded-xl bg-background/40 border-primary/30" />
+                <Input autoComplete="new-password" type={showPassword ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" className="pl-10 h-12 rounded-xl bg-background/40 border-primary/30" />
               </div>
               {errors.password && <p className="text-sm text-red-400">{errors.password}</p>}
             </div>

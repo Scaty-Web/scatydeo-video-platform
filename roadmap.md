@@ -1,3 +1,6 @@
 - [x] Video ve haber yorumlarında yanıtlara yanıt ve GIF gönderimi.
 - [x] Yanıtların kaydedilip tekrar gösterildiğini doğrula.
 - [x] İlk ziyarette /v3 tanıtımı yerine doğrudan ana sayfaya gir.
+- [ ] AI Studio: ElevenLabs seslendirmesi, sessiz oluşturma, MP4 önizleme/indirme/yayınlama ve gerçek akış testi.
+- [ ] Kayıt hatalarını analiz et, düzelt ve doğrula.
+- [ ] AI Studio tanıtım videosunu ve haber duyurusunu yayınla.
