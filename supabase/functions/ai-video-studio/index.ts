@@ -1,14 +1,15 @@
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { generateChatCompletion, GatewayError } from "npm:@lovable.dev/ai-gateway@0.1.11";
+import { z } from "npm:zod@3.25.76";
 
-const GW = "https://ai.gateway.lovable.dev/v1";
-const PLAN_MODELS = ["google/gemini-3.8-flash"];
-const TTS_MODELS = ["google/gemini-3.1-flash-tts-preview", "google/gemini-2.5-flash-tts", "google/gemini-2.5-pro-tts"];
-const VOICES = ["Kore", "Puck", "Charon", "Fenrir", "Aoede", "Zephyr", "Leda", "Orus"];
-
-const json = (b: unknown, s = 200) =>
-  new Response(JSON.stringify(b), { status: s, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-
+const json = (b: unknown, s = 200) => new Response(JSON.stringify(b), { status: s, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+const voices: Record<string, string> = { Roger: "CwhRBWXzGAHq8TQ4Fs17", Sarah: "EXAVITQu4vr4xnSDxMaL", George: "JBFqnCBsd6RMkjVDRZzb", Laura: "FGY2WhTYpPnrIDTdsKH5" };
+const requestSchema = z.discriminatedUnion("action", [
+ z.object({ action: z.literal("plan"), prompt: z.string().trim().min(1).max(3000), images: z.array(z.string().max(1500000).regex(/^data:image\/(jpeg|png|webp);base64,/)).max(12).default([]), narration: z.boolean().default(true) }),
+ z.object({ action: z.literal("tts"), text: z.string().trim().min(1).max(5000), model: z.enum(["eleven_multilingual_v2", "eleven_turbo_v2_5"]), voice: z.enum(["Roger", "Sarah", "George", "Laura"]) }),
+]);
+const planSchema = z.object({ title: z.string().min(1).max(150), thinking: z.string(), duration: z.number().min(3).max(40), background: z.string(), code: z.string().min(1), narration: z.array(z.object({ start: z.number().min(0).max(40), text: z.string().min(1).max(400) })).max(12) });
 const SYSTEM = `Sen Scatydeo AI Studio'sun: HTML/CSS/JS ile kodla video üreten bir yönetmen-programcısın.
 Kullanıcının isteğini (ve varsa resim/video karelerini) anla, nasıl yapacağını düşün, sonra animasyonu kodla.
 SADECE geçerli JSON döndür:
@@ -27,90 +28,46 @@ KOD KURALLARI:
 - assets: kullanıcının verdiği görseller (HTMLImageElement/ImageBitmap dizisi, boş olabilir). Varsa ctx.drawImage ile sahnelerde kullan.
 - Dış kütüphane, fetch, DOM erişimi, alert YOK. Sadece canvas 2D API.
 - Yazı fontu: "bold 64px system-ui" gibi.
-- narration: konuşulması gereken yerler; boş dizi olabilir. Cümleler kısa olsun ve sahne zamanlarıyla uyumlu olsun. Kullanıcının dilinde yaz.`;
+- narration: konuşulması gereken yerler; boş dizi olabilir. Cümleler kısa olsun ve sahne zamanlarıyla uyumlu olsun. Kullanıcının sesli konuşma veya videoyu oynatma talimatını açıklama olarak OKUMA; yalnızca videonun gerçek repliklerini narration içine koy. Sessiz video isteniyorsa narration boş olsun. Kullanıcının dilinde yaz.`;
 
 Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
-  try {
-    const auth = req.headers.get("Authorization") || "";
-    const sb = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_ANON_KEY")!, {
-      global: { headers: { Authorization: auth } },
-    });
-    const { data: claims, error: cErr } = await sb.auth.getClaims(auth.replace("Bearer ", ""));
-    if (cErr || !claims?.claims?.sub) return json({ error: "Giriş yapmalısın." }, 401);
-
-    const key = Deno.env.get("LOVABLE_API_KEY");
-    if (!key) return json({ error: "AI yapılandırılmamış." }, 500);
-    const body = await req.json();
-
-    if (body.action === "tts") {
-      const text = String(body.text || "").slice(0, 600);
-      const model = TTS_MODELS.includes(body.model) ? body.model : TTS_MODELS[0];
-      const voice = VOICES.includes(body.voice) ? body.voice : "Kore";
-      if (!text.trim()) return json({ error: "Metin yok" }, 400);
-      const r = await fetch(`${GW}/audio/speech`, {
-        method: "POST",
-        headers: { "Lovable-API-Key": key, "Content-Type": "application/json" },
-        body: JSON.stringify({
-          model,
-          contents: [{ role: "user", parts: [{ text }] }],
-          generationConfig: { responseModalities: ["AUDIO"], speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: voice } } } },
-        }),
-      });
-      if (!r.ok) {
-        console.error("tts", r.status, await r.text());
-        return json({ error: r.status === 402 ? "AI kredisi bitti." : r.status === 429 ? "Çok fazla istek, biraz bekle." : "Seslendirme başarısız." }, r.status === 402 || r.status === 429 ? r.status : 500);
-      }
-      const buf = new Uint8Array(await r.arrayBuffer());
-      let bin = "";
-      for (let i = 0; i < buf.length; i += 0x8000) bin += String.fromCharCode(...buf.subarray(i, i + 0x8000));
-      return json({ audio: btoa(bin), mime: r.headers.get("content-type") || "audio/wav" });
-    }
-
-    // plan
-    const prompt = String(body.prompt || "").slice(0, 3000);
-    if (!prompt.trim()) return json({ error: "Prompt gerekli" }, 400);
-    const images: string[] = Array.isArray(body.images)
-      ? body.images.filter((x: unknown) => typeof x === "string" && /^data:image\//.test(x as string)).slice(0, 6)
-      : [];
-    const content: unknown[] = [
-      { type: "text", text: `İstek: ${prompt}\nEklenen görsel/video karesi sayısı: ${images.length} (kodda assets[0..${Math.max(images.length - 1, 0)}] olarak kullanılabilir; video kareleri de dahil).` },
-      ...images.map((url) => ({ type: "image_url", image_url: { url } })),
-    ];
-    let lastStatus = 500;
-    for (const model of PLAN_MODELS) {
-      const r = await fetch(`${GW}/chat/completions`, {
-        method: "POST",
-        headers: { "Lovable-API-Key": key, "Content-Type": "application/json" },
-        body: JSON.stringify({ model, response_format: { type: "json_object" }, messages: [{ role: "system", content: SYSTEM }, { role: "user", content }] }),
-      });
-      if (!r.ok) {
-        lastStatus = r.status;
-        console.error("plan", model, r.status, await r.text());
-        if (r.status === 402 || r.status === 429) break;
-        continue;
-      }
-      const d = await r.json();
-      let txt: string = d.choices?.[0]?.message?.content || "";
-      txt = txt.replace(/^```(json)?/i, "").replace(/```$/, "").trim();
-      try {
-        const p = JSON.parse(txt);
-        if (typeof p.code !== "string" || !p.code.includes("draw")) throw new Error("no code");
-        return json({
-          title: String(p.title || "AI Video").slice(0, 150),
-          thinking: String(p.thinking || ""),
-          duration: Math.min(40, Math.max(3, Number(p.duration) || 10)),
-          background: typeof p.background === "string" ? p.background : "#000",
-          code: p.code,
-          narration: Array.isArray(p.narration) ? p.narration.slice(0, 12).map((n: any) => ({ start: Number(n.start) || 0, text: String(n.text || "").slice(0, 400) })).filter((n: any) => n.text) : [],
-        });
-      } catch (e) {
-        console.error("parse", model, e);
-      }
-    }
-    return json({ error: lastStatus === 402 ? "AI kredisi bitti." : lastStatus === 429 ? "Çok fazla istek, biraz bekle." : "AI video planı oluşturamadı, tekrar dene." }, lastStatus === 402 || lastStatus === 429 ? lastStatus : 500);
-  } catch (e) {
-    console.error(e);
-    return json({ error: "Beklenmeyen hata" }, 500);
+ if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+ try {
+  const url = Deno.env.get("SUPABASE_URL"), anon = Deno.env.get("SUPABASE_ANON_KEY");
+  if (!url || !anon) return json({ error: "Servis yapılandırılamadı." }, 503);
+  const auth = req.headers.get("Authorization") || "";
+  const sb = createClient(url, anon, { global: { headers: { Authorization: auth } } });
+  const { data: claims, error } = await sb.auth.getClaims(auth.replace("Bearer ", ""));
+  if (error || !claims?.claims?.sub) return json({ error: "Giriş yapmalısın." }, 401);
+  const { data: banned, error: banError } = await sb.rpc("is_calling_user_banned");
+  if (banError) return json({ error: "Hesap durumu doğrulanamadı." }, 503);
+  if (banned) return json({ error: "Askıya alınmış hesaplar video oluşturamaz." }, 403);
+  const parsed = requestSchema.safeParse(await req.json());
+  if (!parsed.success) return json({ error: "Geçersiz istek.", details: parsed.error.flatten() }, 400);
+  const body = parsed.data;
+  if (body.action === "tts") {
+   const key = Deno.env.get("ELEVENLABS_API_KEY");
+   if (!key) return json({ error: "ElevenLabs bağlantısı gerekli." }, 503);
+   const r = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voices[body.voice]}?output_format=mp3_44100_128`, {
+    method: "POST", headers: { "xi-api-key": key, "Content-Type": "application/json" },
+    body: JSON.stringify({ text: body.text, model_id: body.model, voice_settings: { stability: 0.5, similarity_boost: 0.75 } }),
+   });
+   if (!r.ok) { const details = await r.text(); console.error("ElevenLabs", r.status, details); return json({ error: "ElevenLabs seslendirmesi başarısız.", status: r.status, details }, r.status); }
+   return new Response(await r.arrayBuffer(), { headers: { ...corsHeaders, "Content-Type": "audio/mpeg" } });
   }
+  const content = [
+   { type: "text", text: `İstek: ${body.prompt}\nSeslendirme: ${body.narration ? "Açık; yalnızca istenen replikleri seslendir." : "Kapalı. narration boş dizi olmalı."}\nGörsel sayısı: ${body.images.length}; assets dizisi bu sıradadır.` },
+   ...body.images.map(url => ({ type: "image_url" as const, image_url: { url } })),
+  ];
+  const d = await generateChatCompletion({ model: "google/gemini-3.8-flash", response_format: { type: "json_object" }, messages: [{ role: "system", content: SYSTEM }, { role: "user", content }] });
+  const text = d.choices?.[0]?.message?.content;
+  if (typeof text !== "string") return json({ error: "Gemini geçerli bir video planı döndürmedi." }, 502);
+  const p = planSchema.safeParse(JSON.parse(text.replace(/^```(json)?/i, "").replace(/```$/, "").trim()));
+  if (!p.success) return json({ error: "Video planı geçersiz; isteği tekrar düzenle." }, 502);
+  return json({ ...p.data, narration: body.narration ? p.data.narration : [] });
+ } catch (e) {
+  console.error(e);
+  if (e instanceof GatewayError) return json({ error: e.httpStatus === 402 ? "AI kredisi yetersiz." : e.httpStatus === 429 ? "Çok fazla istek. Biraz bekle." : "Gemini isteği tamamlanamadı.", details: e.message }, e.httpStatus || 502);
+  return json({ error: "İstek tamamlanamadı." }, 500);
+ }
 });
