@@ -921,6 +921,7 @@ export type Database = {
       }
       is_calling_user_banned: { Args: never; Returns: boolean }
       is_user_banned: { Args: { _user_id: string }; Returns: boolean }
+      is_username_available: { Args: { _username: string }; Returns: boolean }
       lookup_login_profile: {
         Args: { _email: string }
         Returns: {
