@@ -11,7 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { getAvatarUrl } from "@/lib/defaults";
 import { z } from "zod";
-import { normalizeEmail, normalizeUsername, signupErrorMessage } from "@/lib/authInput";
+import { normalizeEmail, normalizeUsername, signinErrorMessage, signupErrorMessage, usernameProblem } from "@/lib/authInput";
 import viravoAsset from "@/assets/viravo.mp3.asset.json";
 
 
@@ -46,7 +46,6 @@ const Auth = () => {
 
   const emailSchema = z.string().email(t.auth.validEmail);
   const passwordSchema = z.string().min(6, t.auth.minPassword);
-  const usernameSchema = z.string().min(3, t.auth.minUsername).max(20, t.auth.maxUsername);
 
   // Detect magic-link landing: if URL hash contains access_token, Supabase set a session.
   // Don't auto-redirect; show post-link choice (passwordless vs reset password).
@@ -295,6 +294,7 @@ const Auth = () => {
             <Button type="submit" className="w-full h-12 rounded-full m3-fab !h-12 !px-6" disabled={isLoading}>
               {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : t.auth.loginBtn}
             </Button>
+            {needsConfirm && <Button type="button" variant="secondary" className="w-full" disabled={isLoading} onClick={resendConfirmation}>Doğrulama bağlantısını tekrar gönder</Button>}
             <p className="text-center text-sm text-muted-foreground">
               Hesabın yok mu?{" "}
               <button type="button" onClick={() => { setErrors({}); setStep("signup"); }} className="text-primary hover:underline">
