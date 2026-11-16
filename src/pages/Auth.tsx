@@ -106,7 +106,9 @@ const Auth = () => {
     const { error } = await signIn(email, password);
     setIsLoading(false);
     if (error) {
-      toast({ title: t.auth.loginFailed, description: t.auth.invalidCredentials, variant: "destructive" });
+      const msg = signinErrorMessage(error as { message: string; code?: string });
+      if (msg && /doğrulanmadı/.test(msg)) setNeedsConfirm(true);
+      toast({ title: t.auth.loginFailed, description: msg ?? t.auth.invalidCredentials, variant: "destructive" });
     } else {
       toast({ title: t.auth.welcome, description: t.auth.loginSuccess });
     }
@@ -117,12 +119,14 @@ const Auth = () => {
     const newErrors: typeof errors = {};
     const pr = passwordSchema.safeParse(password);
     if (!pr.success) newErrors.password = pr.error.errors[0].message;
-    const ur = usernameSchema.safeParse(normalizeUsername(username));
-    if (!ur.success) newErrors.username = ur.error.errors[0].message;
+    const uProblem = usernameProblem(username);
+    if (uProblem) newErrors.username = uProblem;
     if (Object.keys(newErrors).length) { setErrors(newErrors); return; }
     setErrors({});
     setIsLoading(true);
     try {
+      const { data: free, error: freeErr } = await supabase.rpc("is_username_available", { _username: normalizeUsername(username) });
+      if (!freeErr && free === false) { setErrors({ username: "Bu kullanıcı adı alınmış. Başka bir tane dene." }); return; }
       const { error, needsConfirmation } = await signUp(email, password, username);
       if (error) {
         toast({ title: t.auth.signupFailed, description: signupErrorMessage(error), variant: "destructive" });
@@ -135,6 +139,14 @@ const Auth = () => {
     } catch {
       toast({ title: t.auth.signupFailed, description: "Bağlantını kontrol edip tekrar dene.", variant: "destructive" });
     } finally { setIsLoading(false); }
+  };
+
+  const [needsConfirm, setNeedsConfirm] = useState(false);
+  const resendConfirmation = async () => {
+    setIsLoading(true);
+    const { error } = await supabase.auth.resend({ type: "signup", email, options: { emailRedirectTo: `${window.location.origin}/auth` } });
+    setIsLoading(false);
+    toast(error ? { title: t.common.error, description: signupErrorMessage(error), variant: "destructive" } : { title: "Doğrulama bağlantısı gönderildi", description: `${email} adresini kontrol et.` });
   };
 
   const sendOtp = async () => {
@@ -322,6 +334,7 @@ const Auth = () => {
             <Mail className="w-10 h-10 mx-auto text-primary" />
             <h2 className="text-xl font-semibold">E-postanı doğrula</h2>
             <p className="text-sm text-muted-foreground">{email} adresine gönderilen doğrulama bağlantısını aç. Doğrulama tamamlandığında hesabına giriş yapabilirsin.</p>
+            <Button variant="secondary" className="w-full" disabled={isLoading} onClick={resendConfirmation}>Bağlantıyı tekrar gönder</Button>
             <Button variant="outline" className="w-full" onClick={() => { setStep("email"); setErrors({}); }}>Girişe dön</Button>
           </div>
         )}

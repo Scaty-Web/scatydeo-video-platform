@@ -7,3 +7,16 @@ export function signupErrorMessage(error: { message: string; code?: string }) {
   if (/database|duplicate/i.test(error.message)) return "Kullanıcı adı kullanılıyor olabilir. Başka bir kullanıcı adıyla tekrar dene.";
   return "Kayıt tamamlanamadı. Bağlantını kontrol edip tekrar dene.";
 }
+// Usernames appear in @mentions and channel links, so only letters, digits, "_" and "." are allowed.
+export function usernameProblem(username: string): string | null {
+  const u = normalizeUsername(username);
+  if (u.length < 3) return "Kullanıcı adı en az 3 karakter olmalı.";
+  if (u.length > 20) return "Kullanıcı adı en fazla 20 karakter olabilir.";
+  if (!/^[\p{L}\p{N}_.]+$/u.test(u)) return "Kullanıcı adında boşluk veya özel karakter olamaz; harf, rakam, _ ve . kullan.";
+  return null;
+}
+export function signinErrorMessage(error: { message: string; code?: string }) {
+  if (error.code === "email_not_confirmed" || /not confirmed/i.test(error.message)) return "E-postan henüz doğrulanmadı. Gelen kutundaki bağlantıya tıkla veya yeni bağlantı iste.";
+  if (/rate|too many/i.test(error.message)) return "Çok fazla deneme yapıldı. Biraz bekleyip tekrar dene.";
+  return null;
+}
