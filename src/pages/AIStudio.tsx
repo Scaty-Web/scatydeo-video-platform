@@ -214,7 +214,7 @@ const AIStudio = () => {
   return (
     <div className="md3-scope min-h-screen bg-background">
       <Navbar />
-      <main className="container mx-auto px-4 pt-24 pb-28 max-w-5xl">
+      <main className="container mx-auto px-4 pt-32 pb-28 max-w-5xl">
         <div className="text-center mb-8">
           <div className="inline-flex items-center gap-2 rounded-full bg-primary/15 text-primary px-4 py-1 text-sm mb-3"><Sparkles className="w-4 h-4" /> Scatydeo AI Studio</div>
           <h1 className="text-3xl md:text-4xl font-bold">Yapay zekâ ile kodla video yap</h1>
