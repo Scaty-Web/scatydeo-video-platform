@@ -74,6 +74,24 @@ async function invokeStudio(body: Record<string, unknown>) {
  return data;
 }
 
+// Binary audio must be read as bytes; the functions client decodes audio/mpeg as text and corrupts it.
+async function fetchNarration(body: { text: string; model: string; voice: string }, signal: AbortSignal) {
+ const { data: { session } } = await supabase.auth.getSession();
+ if (!session) throw new Error("Giriş yapmalısın.");
+ const r = await fetch(`https://${import.meta.env.VITE_SUPABASE_PROJECT_ID}.supabase.co/functions/v1/ai-video-studio`, {
+  method: "POST", signal,
+  headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}`, apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY },
+  body: JSON.stringify({ action: "tts", ...body }),
+ });
+ if (!r.ok) {
+  const detail = await r.json().catch(() => null);
+  throw new Error(detail?.error ? `${detail.error}${detail.status ? ` (${detail.status})` : ""}` : `Seslendirme başarısız (${r.status}).`);
+ }
+ const buf = await r.arrayBuffer();
+ if (!buf.byteLength) throw new Error("Seslendirme dosyası boş geldi.");
+ return buf;
+}
+
 const AIStudio = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -124,9 +142,8 @@ const AIStudio = () => {
       setStage("3/4 · Seslendirme yapılıyor…");
       const clips: { start: number; buf: AudioBuffer }[] = [];
       for (const n of narrationEnabled ? p.narration : []) {
-        const a = await invokeStudio({ action: "tts", text: n.text, model: ttsModel, voice });
-        if (!(a instanceof Blob) || !a.type.startsWith("audio/")) throw new Error("Seslendirme dosyası geçersiz.");
-        clips.push({ start: n.start, buf: await actx.decodeAudioData(await a.arrayBuffer()) });
+        const audio = await fetchNarration({ text: n.text, model: ttsModel, voice }, controller.signal);
+        clips.push({ start: n.start, buf: await actx.decodeAudioData(audio) });
         controller.signal.throwIfAborted();
       }
       const timeline = narrationTimeline(clips.map(c => ({ start: c.start, duration: c.buf.duration })));
