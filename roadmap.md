@@ -4,3 +4,4 @@
 - [ ] AI Studio: ElevenLabs seslendirmesi, sessiz oluşturma, MP4 önizleme/indirme/yayınlama ve gerçek akış testi.
 - [ ] Kayıt hatalarını analiz et, düzelt ve doğrula.
 - [ ] AI Studio tanıtım videosunu ve haber duyurusunu yayınla.
+- [ ] Jessica sesini AI Studio'ya ekle ve tanıtım seslendirmesinde kullan.

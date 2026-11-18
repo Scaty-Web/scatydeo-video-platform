@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useLanguage } from "@/hooks/useLanguage";
@@ -214,7 +214,11 @@ const News = () => {
                     <p className="text-xs text-muted-foreground mb-1">{formatDate(n.created_at)}</p>
                     <h2 className="text-lg font-bold mb-2">{n.title}</h2>
                     <p className="text-sm text-foreground/90 whitespace-pre-wrap leading-relaxed">
-                      {n.content}
+                      {n.content.split(/(\/watch\/[0-9a-f-]{36}|\/ai-studio\b)/gi).map((part, index) =>
+                        /^\/(watch\/[0-9a-f-]{36}|ai-studio)$/i.test(part)
+                          ? <Link key={index} to={part} className="text-primary underline underline-offset-4">{part === "/ai-studio" ? (isTr ? "AI Studio’yu aç" : "Open AI Studio") : (isTr ? "Tanıtım videosunu izle" : "Watch the introduction")}</Link>
+                          : part
+                      )}
                     </p>
 
                     <div className="mt-4 flex items-center gap-3 border-t border-border pt-3">

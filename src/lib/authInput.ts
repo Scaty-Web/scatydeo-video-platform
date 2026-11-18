@@ -1,6 +1,8 @@
 export const normalizeEmail = (email: string) => email.trim().toLowerCase();
 export const normalizeUsername = (username: string) => username.trim();
 export function signupErrorMessage(error: { message: string; code?: string }) {
+  if (error.code === "over_email_send_rate_limit" || /email rate limit/i.test(error.message)) return "Doğrulama e-postası gönderim sınırına ulaşıldı. Bir süre sonra tekrar dene; hesabını e-postanı doğrulamadan kullanamazsın.";
+  if (/email address.*not allowed|domain.*no mail server|can't receive email/i.test(error.message)) return "Bu adres e-posta alamıyor. Adresi kontrol et veya doğrulama bağlantısı alabileceğin başka bir e-posta kullan.";
   if (error.code === "weak_password" || /weak|pwned|leaked|password.*least/i.test(error.message)) return "Bu şifre güvenli bulunmadı. Daha uzun, benzersiz bir şifre kullan.";
   if (/already|registered|exists/i.test(error.message)) return "Bu e-posta zaten kayıtlı. Giriş yapmayı veya şifre sıfırlamayı dene.";
   if (/rate|too many/i.test(error.message)) return "Çok fazla deneme yapıldı. Biraz bekleyip tekrar dene.";

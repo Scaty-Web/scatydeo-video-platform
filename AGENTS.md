@@ -3,3 +3,5 @@
 - Use ReplyComposer for video and news replies so text and GIF submissions share the same target and pending state.
 - Encode AI Studio exports as deterministic MP4 frames with offline audio mixing; this prevents packaging playback and keeps narration in the downloaded video.
 - Run Gemini through the server-only AI Gateway SDK and ElevenLabs TTS through the linked server credential; this keeps private keys out of the browser.
+- Share the dependency-free Studio voice configuration between the browser and edge function so available voices and provider IDs cannot drift.
+- Render internal Studio and introduction watch links in news content as same-origin links so announcements lead directly to the feature and video.

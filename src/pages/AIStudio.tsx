@@ -13,13 +13,14 @@ import { checkMp4Support, encodeStudioMp4, narrationTimeline } from "@/lib/aiStu
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Sparkles, ImagePlus, Film, Loader2, Download, Upload as UploadIcon, X, Mic } from "lucide-react";
+import { DEFAULT_STUDIO_VOICE, STUDIO_VOICES } from "../../supabase/functions/ai-video-studio/voices";
 
 const W = 1280, H = 720;
 const TTS_MODELS = [
   { id: "eleven_multilingual_v2", label: "ElevenLabs Multilingual v2" },
   { id: "eleven_turbo_v2_5", label: "ElevenLabs Turbo v2.5" },
 ];
-const VOICES = ["Roger", "Sarah", "George", "Laura"];
+const VOICES = Object.keys(STUDIO_VOICES);
 
 type Plan = { title: string; thinking: string; duration: number; background: string; code: string; narration: { start: number; text: string }[] };
 
@@ -98,7 +99,7 @@ const AIStudio = () => {
   const [prompt, setPrompt] = useState("");
   const [files, setFiles] = useState<File[]>([]);
   const [ttsModel, setTtsModel] = useState(TTS_MODELS[0].id);
-  const [voice, setVoice] = useState("Roger");
+  const [voice, setVoice] = useState<string>(DEFAULT_STUDIO_VOICE);
   const [narrationEnabled, setNarrationEnabled] = useState(true);
   const abortRef = useRef<AbortController | null>(null);
   useEffect(() => () => abortRef.current?.abort(), []);

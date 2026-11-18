@@ -2,12 +2,12 @@ import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { generateChatCompletion, GatewayError } from "npm:@lovable.dev/ai-gateway@0.1.11";
 import { z } from "npm:zod@3.25.76";
+import { STUDIO_VOICES } from "./voices.ts";
 
 const json = (b: unknown, s = 200) => new Response(JSON.stringify(b), { status: s, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-const voices: Record<string, string> = { Roger: "CwhRBWXzGAHq8TQ4Fs17", Sarah: "EXAVITQu4vr4xnSDxMaL", George: "JBFqnCBsd6RMkjVDRZzb", Laura: "FGY2WhTYpPnrIDTdsKH5" };
 const requestSchema = z.discriminatedUnion("action", [
  z.object({ action: z.literal("plan"), prompt: z.string().trim().min(1).max(3000), images: z.array(z.string().max(1500000).regex(/^data:image\/(jpeg|png|webp);base64,/)).max(12).default([]), narration: z.boolean().default(true) }),
- z.object({ action: z.literal("tts"), text: z.string().trim().min(1).max(5000), model: z.enum(["eleven_multilingual_v2", "eleven_turbo_v2_5"]), voice: z.enum(["Roger", "Sarah", "George", "Laura"]) }),
+ z.object({ action: z.literal("tts"), text: z.string().trim().min(1).max(5000), model: z.enum(["eleven_multilingual_v2", "eleven_turbo_v2_5"]), voice: z.enum(["Jessica", "Roger", "Sarah", "George", "Laura"]) }),
 ]);
 const planSchema = z.object({ title: z.string().min(1).max(150), thinking: z.string(), duration: z.number().min(3).max(40), background: z.string(), code: z.string().min(1), narration: z.array(z.object({ start: z.number().min(0).max(40), text: z.string().min(1).max(400) })).max(12) });
 const SYSTEM = `Sen Scatydeo AI Studio'sun: HTML/CSS/JS ile kodla video üreten bir yönetmen-programcısın.
@@ -48,7 +48,7 @@ Deno.serve(async (req) => {
   if (body.action === "tts") {
    const key = Deno.env.get("ELEVENLABS_API_KEY");
    if (!key) return json({ error: "ElevenLabs bağlantısı gerekli." }, 503);
-   const r = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voices[body.voice]}?output_format=mp3_44100_128`, {
+   const r = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${STUDIO_VOICES[body.voice]}?output_format=mp3_44100_128`, {
     method: "POST", headers: { "xi-api-key": key, "Content-Type": "application/json" },
     body: JSON.stringify({ text: body.text, model_id: body.model, voice_settings: { stability: 0.5, similarity_boost: 0.75 } }),
    });
